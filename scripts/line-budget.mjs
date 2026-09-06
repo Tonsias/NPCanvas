@@ -18,7 +18,10 @@ const SRC_ROOT = join(import.meta.dirname, '..', 'src');
 // feature. `(root)` is the handful of files directly under src/, not in any feature directory.
 const CEILINGS = new Map([
   ['map', { ceiling: 8000, note: '~770 lines of headroom — the busiest directory' }],
-  ['capture', { ceiling: 7900, note: '~750 lines of headroom — the other busiest directory' }],
+  // Bumped mid-M23 (#167): the milestone's own budget already exceeded the M21 ceiling by #166,
+  // and #168/#169/#170 are still to land. This covers the rest of M23, not another milestone —
+  // due for its own M21-style reset once M23 is cut.
+  ['capture', { ceiling: 9200, note: '~900 lines of headroom for the rest of M23' }],
   ['project', { ceiling: 5800, note: '~540 lines of headroom — the schema and reducer' }],
   ['insights', { ceiling: 3900, note: '~430 lines of headroom' }],
   ['cinema', { ceiling: 3200, note: "M22's new feature directory — room for the whole milestone" }],
@@ -35,7 +38,7 @@ const CEILINGS = new Map([
 
 // The sum of the ceilings above, checked separately so a reader sees the milestone's own
 // promise (src/ stays well under its pre-M21 size) rather than only per-directory numbers.
-const TOTAL_CEILING = 39400;
+const TOTAL_CEILING = 40700;
 
 function listSourceFiles(dir) {
   const out = [];
