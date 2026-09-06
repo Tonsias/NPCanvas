@@ -2,9 +2,11 @@ import { dialoguesByTimeAsc } from '../dialogue/dialogue-order.ts'
 import { toLocalDateTimeValue } from '../dialogue/local-datetime.ts'
 import { mapCanvasRect } from '../map/canvas-layout.ts'
 import type { Rect } from '../map/geometry.ts'
-import type { Dialogue, GameMap, MapId, PendingCapture, Point } from '../project/types.ts'
-import { LOCATE_ACCEPT, LOCATE_MARGIN } from './frame-locate.ts'
-import type { WindowMatch } from './frame-locate.ts'
+import type { CaptureProfile, Dialogue, GameMap, MapId, PendingCapture, Point } from '../project/types.ts'
+import { LOCATE_ACCEPT, LOCATE_MARGIN, locateWindow } from './frame-locate.ts'
+import type { FrameMask, WindowMatch } from './frame-locate.ts'
+import { frameWindowRect } from './frame-window.ts'
+import { decodeMask, mapMask } from './map-mask-cache.ts'
 
 export const PLACE_SOURCES = ['frame', 'neighbour'] as const
 export type PlaceSource = (typeof PLACE_SOURCES)[number]
@@ -78,6 +80,61 @@ export function withResults(
   const merged = new Map(search.results)
   for (const id of toScore) merged.set(id, results.get(id) ?? null)
   return { order: search.order, depth: search.depth + toScore.length, results: merged }
+}
+
+// The captured frame is the whole console screen; only the part above the text box is map
+// (capture-to-dialogue.ts always writes the picture at exactly `profile.nativeWidth` x
+// `nativeHeight`, so the profile it was captured against is found back by matching that size —
+// `PendingCapture` does not carry a profile id). Two profiles calibrated for the same console (a
+// project's "Yellow" and its "Pokedex" profile both target 160x144) can share that size while
+// disagreeing on where the text box starts, so a size match alone cannot say *which* one made this
+// picture. The narrowest of the matches' windows is used regardless — a Pokedex entry has no map
+// in frame either way and is meant to score low everywhere, and a real map screen loses nothing by
+// a few extra rows being cropped away with the text box. `null` when there is no picture yet, or no
+// profile matches at all — a picture whose profile was since deleted has nothing to search a map for.
+async function captureWindowMask(
+  capture: PendingCapture,
+  profiles: readonly CaptureProfile[],
+): Promise<FrameMask | null> {
+  const media = capture.media[0]
+  if (media === undefined) return null
+  const matches = profiles.filter(
+    (candidate) => candidate.nativeWidth === media.width && candidate.nativeHeight === media.height,
+  )
+  if (matches.length === 0) return null
+  const rect = matches
+    .map(frameWindowRect)
+    .reduce((narrowest, candidate) => (candidate.height < narrowest.height ? candidate : narrowest))
+  return decodeMask(media.file, rect)
+}
+
+// Scores the maps inside `RING_DEPTH_DEFAULT` of `order` against `capture`'s own frame — the
+// wiring #167 left undone. No decode and no search at all when the capture has no picture, so a
+// press over a capture with nothing to look at never touches the mask cache.
+export async function buildRingSearch(
+  capture: PendingCapture,
+  maps: readonly GameMap[],
+  profiles: readonly CaptureProfile[],
+  from: GameMap | null,
+): Promise<RingSearch> {
+  const order = orderCandidateMaps(from, maps)
+  const depth = Math.min(RING_DEPTH_DEFAULT, order.length)
+  const toScore = order.slice(0, depth)
+  const results = new Map<MapId, WindowMatch | null>()
+
+  const windowMask = await captureWindowMask(capture, profiles)
+  if (windowMask !== null) {
+    const scored = await Promise.all(
+      toScore.map(async (mapId): Promise<readonly [MapId, WindowMatch | null]> => {
+        const map = maps.find((candidate) => candidate.id === mapId)
+        const mask = map === undefined ? null : await mapMask(map)
+        return [mapId, mask === null ? null : locateWindow(windowMask, mask)]
+      }),
+    )
+    for (const [mapId, match] of scored) results.set(mapId, match)
+  }
+
+  return { order, depth, results }
 }
 
 export type MapCandidate = {

@@ -8,7 +8,7 @@ import type { CanvasViewState } from '../app/view-state.ts'
 import { CanvasLegend } from '../dialogue/CanvasLegend.tsx'
 import { DialoguePanel } from '../dialogue/DialoguePanel.tsx'
 import type { PlaceSuggestion } from '../capture/place-suggestion.ts'
-import { suggestFromNeighbour } from '../capture/place-suggestion.ts'
+import { buildRingSearch, suggestFromNeighbour, suggestPlacement } from '../capture/place-suggestion.ts'
 import { resolveGalleryIndex } from '../media/gallery-index.ts'
 import { byId, questIndexFor } from '../project/derived.ts'
 import { newDialogueId } from '../project/ids.ts'
@@ -117,16 +117,44 @@ export function MapScreen({
   previousCaptureIndex.current = captureIndex
   const currentCapture = project.pendingCaptures[captureIndex] ?? null
 
-  const suggestions = useMemo<readonly PlaceSuggestion[]>(() => {
-    if (!suggesting || currentCapture === null) return NO_SUGGESTIONS
-    const suggestion = suggestFromNeighbour(currentCapture, project.dialogues, project.maps)
-    return suggestion === null ? NO_SUGGESTIONS : [suggestion]
-  }, [suggesting, currentCapture, project.dialogues, project.maps])
-
-  // A fresh card, or the mode just turning on, starts back at the top candidate.
+  // The frame candidates plus the clock's guess (#168, wiring #167's ring search into #164's
+  // card). Async, so this is state built by an effect rather than a useMemo — decoding a map's
+  // mask reads a file. `from` is the neighbour's map: the picture search has no notion of "where
+  // the player probably still is", so the time-nearest dialogue's map stands in for it.
+  const [suggestions, setSuggestions] = useState<readonly PlaceSuggestion[]>(NO_SUGGESTIONS)
   useEffect(() => {
-    setSelectedSuggestionIndex(0)
-  }, [currentCapture, suggesting])
+    if (!suggesting || currentCapture === null) {
+      setSuggestions(NO_SUGGESTIONS)
+      return
+    }
+    const capture = currentCapture
+    let cancelled = false
+    setSuggestions(NO_SUGGESTIONS) // clears a previous capture's stale candidates while this one decodes
+    const neighbour = suggestFromNeighbour(capture, project.dialogues, project.maps)
+    const fromMap =
+      neighbour === null ? null : (project.maps.find((map) => map.id === neighbour.mapId) ?? null)
+    void buildRingSearch(capture, project.maps, project.captureProfiles, fromMap).then((search) => {
+      if (cancelled) return
+      setSuggestions(suggestPlacement(search, capture, project.dialogues, project.maps))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [suggesting, currentCapture, project.dialogues, project.maps, project.captureProfiles])
+
+  // The top frame candidate when it clears isConfident (baked into `confidence === 1` by
+  // suggestPlacement), otherwise the clock's guess — so hammering Enter stays safe, and looking
+  // stays possible. Falls to index 0 (whatever the list starts with) when there is no guess to
+  // fall back to, which a media-less capture's neighbour-only list already satisfies on its own.
+  useEffect(() => {
+    const confidentIndex = suggestions.findIndex((suggestion) => suggestion.confidence === 1)
+    if (confidentIndex !== -1) {
+      setSelectedSuggestionIndex(confidentIndex)
+      return
+    }
+    const guessIndex = suggestions.findIndex((suggestion) => suggestion.source === 'neighbour')
+    setSelectedSuggestionIndex(guessIndex === -1 ? 0 : guessIndex)
+  }, [suggestions])
 
   const selectedSuggestion = suggestions[selectedSuggestionIndex] ?? null
 

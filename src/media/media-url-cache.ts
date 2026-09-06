@@ -55,6 +55,26 @@ export function useMediaUrl(file: MediaFile): MediaUrl {
   return useSyncExternalStore(subscribe, getSnapshot)
 }
 
+// Imperative counterpart to useMediaUrl, for decode work outside a component (map-mask-cache.ts) —
+// goes through the same ref-counted entries so a mask decode can't fight a mounted pin's own
+// deferred revoke, or read the same file off disk a second time.
+export async function acquireMediaUrl(file: MediaFile): Promise<MediaUrl> {
+  const entry = acquire(file.fileName)
+  if (entry.state.kind !== 'loading') return entry.state
+  return new Promise((resolve) => {
+    const listener = () => {
+      if (entry.state.kind === 'loading') return
+      entry.listeners.delete(listener)
+      resolve(entry.state)
+    }
+    entry.listeners.add(listener)
+  })
+}
+
+export function releaseMediaUrl(file: MediaFile): void {
+  release(file.fileName)
+}
+
 // A re-import writes the same derived file name with new bytes, so callers must drop the
 // cached URL for it explicitly.
 export function invalidateMediaFile(fileName: string): void {

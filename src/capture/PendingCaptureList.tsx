@@ -93,8 +93,21 @@ export function PendingCaptureList({
         event.preventDefault()
         return
       }
-      // A one-entry list makes these a no-op rather than an error — #168 gives them something
-      // to step between.
+      // 1/2/3 jump straight to a frame candidate by rank; g jumps to the clock's guess — both
+      // land on whatever position that entry actually occupies, since a capture with fewer than
+      // three frame candidates still keeps the guess as its last entry.
+      if (event.key >= '1' && event.key <= '3') {
+        const position = Number(event.key) - 1
+        if (position < suggestions.length) onChangeSuggestionIndex(position)
+        event.preventDefault()
+        return
+      }
+      if (event.key === 'g' || event.key === 'G') {
+        const guessIndex = suggestions.findIndex((candidate) => candidate.source === 'neighbour')
+        if (guessIndex !== -1) onChangeSuggestionIndex(guessIndex)
+        event.preventDefault()
+        return
+      }
       if (event.key === 'ArrowUp') {
         onChangeSuggestionIndex(stepGalleryIndex(selectedSuggestionIndex, -1, suggestions.length))
         event.preventDefault()
@@ -296,14 +309,17 @@ function CaptureCard({
                     aria-current={position === selectedSuggestionIndex ? 'true' : undefined}
                     onClick={() => onChangeSuggestionIndex(position)}
                   >
-                    {candidate.reason}
+                    <span className="pending-capture-list__suggestion-text">{candidate.reason}</span>
+                    {candidate.source === 'neighbour' && (
+                      <span className="pending-capture-list__suggestion-guess-tag">guess</span>
+                    )}
                   </button>
                 </li>
               ))}
             </ul>
           )}
           <p className="pending-capture-list__suggestion-hint hint-text">
-            Enter to place here · Escape to stop suggesting
+            1/2/3 or g to pick · Enter to place here · Escape to stop suggesting
           </p>
         </div>
       )}
