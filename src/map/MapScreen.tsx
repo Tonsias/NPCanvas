@@ -7,7 +7,11 @@ import { clearSelection } from '../app/select.ts'
 import type { CanvasViewState } from '../app/view-state.ts'
 import { CanvasLegend } from '../dialogue/CanvasLegend.tsx'
 import { DialoguePanel } from '../dialogue/DialoguePanel.tsx'
+import type { PlaceSuggestion } from '../capture/place-suggestion.ts'
+import { suggestFromNeighbour } from '../capture/place-suggestion.ts'
+import { resolveGalleryIndex } from '../media/gallery-index.ts'
 import { byId, questIndexFor } from '../project/derived.ts'
+import { newDialogueId } from '../project/ids.ts'
 import { dispatch } from '../project/store.ts'
 import { dialoguesInAnyQuest } from '../quest/quest-index.ts'
 import type {
@@ -29,7 +33,7 @@ import type { Viewport } from './viewport.ts'
 import { MapImportButton } from './MapImportButton.tsx'
 import { MapList } from './MapList.tsx'
 import type { PinDragPreview } from './PinLayer.tsx'
-import { PinLayer } from './PinLayer.tsx'
+import { PinLayer, ProvisionalPin } from './PinLayer.tsx'
 import { ReferenceLayer } from './ReferenceLayer.tsx'
 import { isTextFieldFocused } from '../text-field-focus.ts'
 import { TrailLayer } from './TrailLayer.tsx'
@@ -82,10 +86,65 @@ export function MapScreen({
         return
       }
       setArmedCaptureId(captureId)
+      setSuggesting(false) // one placement gesture at a time
       setTool({ kind: 'place-dialogue' })
     },
     [armedCaptureId, setTool],
   )
+
+  // #164: a mode, not a one-shot — suggestFromNeighbour only runs while it's on, which is what
+  // keeps browsing the carousel as cheap as it is today.
+  const [suggesting, setSuggesting] = useState(false)
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0)
+  const onToggleSuggest = useCallback(() => {
+    setSuggesting((prev) => {
+      const next = !prev
+      if (next) setArmedCaptureId(null) // one placement gesture at a time
+      return next
+    })
+  }, [])
+
+  // Resolved here, not inside PendingCaptureList, so the suggestion this component computes and
+  // the card the sidebar shows never disagree about which capture is "current". Falls to
+  // `previousCaptureIndex` — the item that took a just-placed capture's place — rather than the
+  // last one, which is the #164 fix to resolveGalleryIndex's old always-last fallback.
+  const previousCaptureIndex = useRef<number | null>(null)
+  const captureIndex = resolveGalleryIndex(
+    project.pendingCaptures,
+    currentCaptureId,
+    previousCaptureIndex.current,
+  )
+  previousCaptureIndex.current = captureIndex
+  const currentCapture = project.pendingCaptures[captureIndex] ?? null
+
+  const suggestions = useMemo<readonly PlaceSuggestion[]>(() => {
+    if (!suggesting || currentCapture === null) return NO_SUGGESTIONS
+    const suggestion = suggestFromNeighbour(currentCapture, project.dialogues, project.maps)
+    return suggestion === null ? NO_SUGGESTIONS : [suggestion]
+  }, [suggesting, currentCapture, project.dialogues, project.maps])
+
+  // A fresh card, or the mode just turning on, starts back at the top candidate.
+  useEffect(() => {
+    setSelectedSuggestionIndex(0)
+  }, [currentCapture, suggesting])
+
+  const selectedSuggestion = suggestions[selectedSuggestionIndex] ?? null
+
+  const onChangeSuggestionIndex = useCallback(
+    (index: number) => setSelectedSuggestionIndex(index),
+    [],
+  )
+
+  const onCommitSuggestion = useCallback(() => {
+    if (currentCapture === null || selectedSuggestion === null) return
+    dispatch({
+      kind: 'pending-capture/placed',
+      captureId: currentCapture.id,
+      dialogueId: newDialogueId(),
+      mapId: selectedSuggestion.mapId,
+      position: selectedSuggestion.position,
+    })
+  }, [currentCapture, selectedSuggestion])
   // Auto-cancels rather than leaving a dangling arm: closing the panel or selecting elsewhere
   // means there is no longer a "points at" list on screen for a resolved click to land in.
   useEffect(() => {
@@ -349,6 +408,7 @@ export function MapScreen({
             onVisibleRectChange={setVisibleRect}
             onDialoguePlaced={onDialoguePlaced}
             armedCaptureId={armedCaptureId}
+            suggestionFocus={selectedSuggestion}
             initialViewport={viewport}
             onViewportChange={setViewport}
           >
@@ -388,6 +448,7 @@ export function MapScreen({
               onPinSelected={onPinSelected}
               onPinDrag={setPinDrag}
             />
+            <ProvisionalPin maps={placedMaps} target={selectedSuggestion} />
           </MapCanvas>
         </div>
         {selectedDialogue !== null ? (
@@ -415,6 +476,12 @@ export function MapScreen({
             onArm={onArmCapture}
             currentCaptureId={currentCaptureId}
             onSelect={setCurrentCaptureId}
+            suggesting={suggesting}
+            onToggleSuggest={onToggleSuggest}
+            suggestions={suggestions}
+            selectedSuggestionIndex={selectedSuggestionIndex}
+            onChangeSuggestionIndex={onChangeSuggestionIndex}
+            onCommitSuggestion={onCommitSuggestion}
             width={panelWidth}
             onWidthChange={setPanelWidth}
             measureAvailableWidth={measureAvailableWidth}
@@ -424,6 +491,8 @@ export function MapScreen({
     </section>
   )
 }
+
+const NO_SUGGESTIONS: readonly PlaceSuggestion[] = []
 
 // Returns the original array when nothing is being dragged — a fresh array every render would
 // defeat PinLayer's memo.

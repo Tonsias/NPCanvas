@@ -33,6 +33,24 @@ describe('resolveGalleryIndex', () => {
   })
 })
 
+describe('resolveGalleryIndex with a previous position', () => {
+  it('lands on the item that took the vanished one\'s place', () => {
+    // 'a' was at index 0 and got removed; 'b' slid into its place.
+    const remaining = [medium('b'), medium('c')]
+    expect(resolveGalleryIndex(remaining, 'a' as MediaId, 0)).toBe(0)
+  })
+
+  it('falls to the last item when the vanished one was last', () => {
+    // 'c' was at index 2 and got removed; nothing slid into its place.
+    const remaining = [medium('a'), medium('b')]
+    expect(resolveGalleryIndex(remaining, 'c' as MediaId, 2)).toBe(1)
+  })
+
+  it('answers 0 for a queue emptied to nothing, previous position and all', () => {
+    expect(resolveGalleryIndex([], 'a' as MediaId, 0)).toBe(0)
+  })
+})
+
 describe('resolveGalleryIndex over a differently-branded id', () => {
   type CaptureId = string & { readonly brand: 'CaptureId' }
   function capture(id: string): { id: CaptureId } {

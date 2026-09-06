@@ -1,5 +1,5 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactElement } from 'react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { EditableRowDeleteConfirm } from '../app/EditableRow.tsx'
 import { useEditableRow } from '../app/use-editable-row.ts'
 import { toLocalDateTimeValue } from '../dialogue/local-datetime.ts'
@@ -13,6 +13,7 @@ import { MediaView } from '../media/MediaView.tsx'
 import { dispatch } from '../project/store.ts'
 import type { PendingCapture, PendingCaptureId, ProjectFile } from '../project/types.ts'
 import { isTextFieldFocused } from '../text-field-focus.ts'
+import type { PlaceSuggestion } from './place-suggestion.ts'
 import { useWatchState } from './capture-watch.ts'
 import './PendingCaptureList.css'
 
@@ -26,12 +27,26 @@ export function PendingCaptureList({
   onArm,
   currentCaptureId,
   onSelect,
+  suggesting,
+  onToggleSuggest,
+  suggestions,
+  selectedSuggestionIndex,
+  onChangeSuggestionIndex,
+  onCommitSuggestion,
 }: {
   project: ProjectFile
   armedCaptureId: PendingCaptureId | null
   onArm: (captureId: PendingCaptureId) => void
   currentCaptureId: PendingCaptureId | null
   onSelect: (captureId: PendingCaptureId) => void
+  /** Toggled on as a mode, not fired once (#164) — see MapScreen, which owns this state and the
+   * suggestion it computes from whichever capture is current. */
+  suggesting: boolean
+  onToggleSuggest: () => void
+  suggestions: readonly PlaceSuggestion[]
+  selectedSuggestionIndex: number
+  onChangeSuggestionIndex: (index: number) => void
+  onCommitSuggestion: () => void
 }): ReactElement {
   const npcNames = npcNamesIn(project.dialogues)
   const captures = project.pendingCaptures
@@ -42,6 +57,12 @@ export function PendingCaptureList({
   const index = resolveGalleryIndex(captures, currentCaptureId)
   const current = captures[index] ?? null
   const paged = captures.length > 1
+
+  // A commit remounts CaptureCard (keyed on capture.id, so the delete confirmation can't survive
+  // a page) — that unmounts the button Enter was pressed from and drops focus to <body>, which
+  // would stop the next Enter from ever reaching this handler. Focusing the container itself
+  // (stable across that remount) keeps "Enter, Enter, Enter to the end of the queue" working.
+  const containerRef = useRef<HTMLDivElement>(null)
 
   // The carousel follows the watcher: a fresh or reopened conversation is the one growing on
   // screen while it is recorded. Only fires again once `recordingCaptureId` changes, which lets
@@ -56,9 +77,37 @@ export function PendingCaptureList({
   }
 
   // Bound on the container, never on `window` — the sidebar sits beside a canvas that owns the
-  // arrow keys (`MapScreen`'s tool shortcuts).
+  // arrow keys (`MapScreen`'s tool shortcuts), the same rule #157 settled for Cinema.
   function onKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
-    if (!paged || isTextFieldFocused()) return
+    if (isTextFieldFocused()) return
+
+    if (suggesting) {
+      if (event.key === 'Enter') {
+        onCommitSuggestion()
+        containerRef.current?.focus()
+        event.preventDefault()
+        return
+      }
+      if (event.key === 'Escape') {
+        onToggleSuggest()
+        event.preventDefault()
+        return
+      }
+      // A one-entry list makes these a no-op rather than an error — #168 gives them something
+      // to step between.
+      if (event.key === 'ArrowUp') {
+        onChangeSuggestionIndex(stepGalleryIndex(selectedSuggestionIndex, -1, suggestions.length))
+        event.preventDefault()
+        return
+      }
+      if (event.key === 'ArrowDown') {
+        onChangeSuggestionIndex(stepGalleryIndex(selectedSuggestionIndex, 1, suggestions.length))
+        event.preventDefault()
+        return
+      }
+    }
+
+    if (!paged) return
     if (event.key === 'ArrowLeft') page(-1)
     else if (event.key === 'ArrowRight') page(1)
     else return
@@ -71,7 +120,7 @@ export function PendingCaptureList({
   }
 
   return (
-    <div className="pending-capture-list" onKeyDown={onKeyDown}>
+    <div className="pending-capture-list" tabIndex={-1} ref={containerRef} onKeyDown={onKeyDown}>
       {current === null ? (
         <p className="pending-capture-list__empty hint-text">
           Nothing waiting. Press New capture or Extend last to record a conversation.
@@ -91,6 +140,11 @@ export function PendingCaptureList({
           onArm={() => onArm(current.id)}
           onSelect={onSelect}
           onDeleteConfirmed={() => onDeleteConfirmed(current)}
+          suggesting={suggesting}
+          onToggleSuggest={onToggleSuggest}
+          suggestions={suggestions}
+          selectedSuggestionIndex={selectedSuggestionIndex}
+          onChangeSuggestionIndex={onChangeSuggestionIndex}
         />
       )}
     </div>
@@ -109,6 +163,11 @@ function CaptureCard({
   onArm,
   onSelect,
   onDeleteConfirmed,
+  suggesting,
+  onToggleSuggest,
+  suggestions,
+  selectedSuggestionIndex,
+  onChangeSuggestionIndex,
 }: {
   project: ProjectFile
   capture: PendingCapture
@@ -121,6 +180,11 @@ function CaptureCard({
   onArm: () => void
   onSelect: (captureId: PendingCaptureId) => void
   onDeleteConfirmed: () => void
+  suggesting: boolean
+  onToggleSuggest: () => void
+  suggestions: readonly PlaceSuggestion[]
+  selectedSuggestionIndex: number
+  onChangeSuggestionIndex: (index: number) => void
 }): ReactElement {
   const editable = useEditableRow()
   const firstMedium = capture.media[0] ?? null
@@ -216,6 +280,34 @@ function CaptureCard({
         }
       />
 
+      {suggesting && (
+        <div className="pending-capture-list__suggestion">
+          {suggestions.length === 0 ? (
+            <p className="pending-capture-list__suggestion-empty hint-text">
+              No suggestion yet — nothing else is logged to place this near.
+            </p>
+          ) : (
+            <ul className="pending-capture-list__suggestion-candidates">
+              {suggestions.map((candidate, position) => (
+                <li key={position}>
+                  <button
+                    type="button"
+                    className="pending-capture-list__suggestion-candidate"
+                    aria-current={position === selectedSuggestionIndex ? 'true' : undefined}
+                    onClick={() => onChangeSuggestionIndex(position)}
+                  >
+                    {candidate.reason}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="pending-capture-list__suggestion-hint hint-text">
+            Enter to place here · Escape to stop suggesting
+          </p>
+        </div>
+      )}
+
       <div className="pending-capture-list__actions">
         <button
           type="button"
@@ -230,6 +322,20 @@ function CaptureCard({
           }
         >
           {armed ? 'Placing… click a map' : 'Place on map'}
+        </button>
+        <button
+          type="button"
+          className="button"
+          aria-pressed={suggesting}
+          data-armed={suggesting ? 'true' : undefined}
+          onClick={onToggleSuggest}
+          title={
+            suggesting
+              ? 'Stop suggesting a placement'
+              : 'Suggest where this conversation belongs, walk the queue with Enter'
+          }
+        >
+          {suggesting ? 'Suggesting…' : 'Suggest placement'}
         </button>
         {editable.mode === 'delete' ? (
           <EditableRowDeleteConfirm

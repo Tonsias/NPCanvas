@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { useRef } from 'react'
+import type { PlaceSuggestion } from '../capture/place-suggestion.ts'
 import { CaptureRecorder } from '../capture/CaptureRecorder.tsx'
 import { PendingCaptureList } from '../capture/PendingCaptureList.tsx'
 import type { PendingCaptureId, ProjectFile } from '../project/types.ts'
@@ -14,6 +15,12 @@ export function CapturesPanel({
   onArm,
   currentCaptureId,
   onSelect,
+  suggesting,
+  onToggleSuggest,
+  suggestions,
+  selectedSuggestionIndex,
+  onChangeSuggestionIndex,
+  onCommitSuggestion,
   width,
   onWidthChange,
   measureAvailableWidth,
@@ -23,6 +30,12 @@ export function CapturesPanel({
   onArm: (captureId: PendingCaptureId) => void
   currentCaptureId: PendingCaptureId | null
   onSelect: (captureId: PendingCaptureId) => void
+  suggesting: boolean
+  onToggleSuggest: () => void
+  suggestions: readonly PlaceSuggestion[]
+  selectedSuggestionIndex: number
+  onChangeSuggestionIndex: (index: number) => void
+  onCommitSuggestion: () => void
   width: number | null
   onWidthChange: (width: number) => void
   measureAvailableWidth: () => number
@@ -46,6 +59,12 @@ export function CapturesPanel({
         onArm={onArm}
         currentCaptureId={currentCaptureId}
         onSelect={onSelect}
+        suggesting={suggesting}
+        onToggleSuggest={onToggleSuggest}
+        suggestions={suggestions}
+        selectedSuggestionIndex={selectedSuggestionIndex}
+        onChangeSuggestionIndex={onChangeSuggestionIndex}
+        onCommitSuggestion={onCommitSuggestion}
       />
     </SidePanel>
   )

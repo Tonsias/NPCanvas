@@ -30,6 +30,7 @@ import {
   clampMapScale,
   mapAtCanvasPoint,
   mapCanvasRect,
+  mapLocalToCanvas,
   mapsBounds,
   zoneAtCanvasPoint,
   zoneCanvasRect,
@@ -71,6 +72,11 @@ const SCALE_STEP = 1.25
 const PIN_LABEL_ZOOM_THRESHOLD = 0.5
 
 const NOTICE_MS = 4000
+
+// A square framing a suggested placement, in canvas px — wide enough to show the neighbourhood
+// around the guess, not just the dashed pin itself. `fitRectToContainer` needs a non-zero rect;
+// a bare point has no size of its own.
+const SUGGESTION_FOCUS_SIZE = 480
 
 const PAN_STEP = 48
 const PAN_STEP_FAST = 8
@@ -128,6 +134,7 @@ function useCanvasViewport({
   zones,
   focus,
   onFocusApplied,
+  suggestionFocus,
   initialViewport,
   onViewportChange,
   onVisibleRectChange,
@@ -137,6 +144,10 @@ function useCanvasViewport({
   zones: readonly Zone[]
   focus: FocusTarget | null
   onFocusApplied: () => void
+  /** A suggestion's map-local point, not routed through `focus` — a transient guess has no
+   * business filling the back button, and re-selecting a candidate must refit every time,
+   * unlike `focus`'s one-shot. */
+  suggestionFocus: { mapId: MapId; position: Point } | null
   initialViewport: Viewport | null
   onViewportChange: (viewport: Viewport) => void
   onVisibleRectChange: (rect: Rect) => void
@@ -212,6 +223,27 @@ function useCanvasViewport({
     }
     onFocusApplied()
   }, [focus, maps, zones, container, onFocusApplied, applyViewport])
+
+  // Refits on every change of the suggestion itself — switching candidates must move the canvas
+  // again, so this is not one-shot like the focus effect above.
+  useEffect(() => {
+    if (suggestionFocus === null) return
+    if (container.width === 0 || container.height === 0) return
+    const map = maps.find((candidate) => candidate.id === suggestionFocus.mapId)
+    if (map === undefined) return
+    const center = mapLocalToCanvas(map, suggestionFocus.position)
+    applyViewport(
+      fitRectToContainer(
+        {
+          x: center.x - SUGGESTION_FOCUS_SIZE / 2,
+          y: center.y - SUGGESTION_FOCUS_SIZE / 2,
+          width: SUGGESTION_FOCUS_SIZE,
+          height: SUGGESTION_FOCUS_SIZE,
+        },
+        container,
+      ),
+    )
+  }, [suggestionFocus, maps, container, applyViewport])
 
   // Every viewport change restarts the timer, so a pan or zoom publishes exactly once, on stop —
   // a per-frame onViewportChange would re-render MapScreen on every pointermove.
@@ -302,6 +334,8 @@ type MapCanvasProps = {
   onDialoguePlaced: (dialogueId: DialogueId) => void
   /** When set, a place-dialogue click dispatches pending-capture/placed instead of a fresh Dialogue. */
   armedCaptureId: PendingCaptureId | null
+  /** The selected candidate while suggestion mode is on (#164) — moves the canvas there. */
+  suggestionFocus: { mapId: MapId; position: Point } | null
   /** Read only at mount; this component owns the live value after and reports via onViewportChange. */
   initialViewport: Viewport | null
   onViewportChange: (viewport: Viewport) => void
@@ -326,6 +360,7 @@ export function MapCanvas({
   onVisibleRectChange,
   onDialoguePlaced,
   armedCaptureId,
+  suggestionFocus,
   initialViewport,
   onViewportChange,
   children,
@@ -338,6 +373,7 @@ export function MapCanvas({
       zones,
       focus,
       onFocusApplied,
+      suggestionFocus,
       initialViewport,
       onViewportChange,
       onVisibleRectChange,

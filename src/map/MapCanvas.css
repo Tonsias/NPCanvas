@@ -502,6 +502,22 @@
   outline-color: var(--accent);
 }
 
+/* A suggestion is not yet a Dialogue — dashed and hollow, never the pin's own solid fill, so a
+   provisional placement can't be mistaken for a placed one glimpsed mid-pan. Not interactive:
+   Enter commits it, not a click. */
+.pin--provisional {
+  pointer-events: none;
+}
+
+.pin__marker--provisional {
+  display: inline-flex;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: var(--radius-round);
+  border: 2px dashed var(--accent);
+  background: transparent;
+}
+
 /* Transparent, so the bands run the full width of the pin behind the glyph. Only the
    thumbnail inside it is opaque. */
 .pin__face {

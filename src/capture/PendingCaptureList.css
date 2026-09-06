@@ -7,6 +7,12 @@
   gap: var(--space-3);
 }
 
+/* Focused programmatically after a suggestion commit, to survive CaptureCard's remount — never
+   by Tab, so no visible ring is needed here. */
+.pending-capture-list:focus {
+  outline: none;
+}
+
 /* `.hint-text` (index.css) supplies the margin/colour; the size is a step up. */
 .pending-capture-list__empty {
   font-size: var(--text-xs);
@@ -110,6 +116,54 @@
 .pending-capture-list__carry-over:hover {
   background: var(--surface-2);
   color: var(--text);
+}
+
+/* #164's suggestion mode: a ranked list of candidates for wherever the current capture belongs,
+   shown between the relevance picker and the placement actions. */
+.pending-capture-list__suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-2);
+}
+
+.pending-capture-list__suggestion-empty {
+  margin: 0;
+  font-size: var(--text-xs);
+}
+
+.pending-capture-list__suggestion-candidates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pending-capture-list__suggestion-candidate {
+  width: 100%;
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-1);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+  text-align: left;
+}
+
+.pending-capture-list__suggestion-candidate[aria-current='true'] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.pending-capture-list__suggestion-hint {
+  margin: 0;
+  font-size: var(--text-2xs);
 }
 
 /* `.pending-capture-list__actions` (index.css) supplies the layout. */

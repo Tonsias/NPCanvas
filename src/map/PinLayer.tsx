@@ -271,6 +271,27 @@ function select(id: DialogueId): void {
   selectDialogue(id)
 }
 
+/** A candidate placement, drawn hollow and dashed (see `.pin--provisional`) so it reads as a
+ * guess rather than a placed pin — #164's suggestion mode. */
+export function ProvisionalPin({
+  maps,
+  target,
+}: {
+  maps: readonly GameMap[]
+  target: { mapId: MapId; position: Point } | null
+}): ReactElement | null {
+  if (target === null) return null
+  const map = maps.find((candidate) => candidate.id === target.mapId)
+  if (map === undefined) return null
+  return (
+    <div className="pin-layer__map" style={mapGroupStyle(map)}>
+      <div className="pin pin--provisional" style={pinStyle(target.position)}>
+        <span className="pin__marker--provisional" aria-hidden="true" />
+      </div>
+    </div>
+  )
+}
+
 const NO_QUESTS: readonly Quest[] = []
 const NO_DIALOGUES: readonly Dialogue[] = []
 
