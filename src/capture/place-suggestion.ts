@@ -8,8 +8,8 @@ import type { FrameMask, WindowMatch } from './frame-locate.ts'
 import { frameWindowRect } from './frame-window.ts'
 import { decodeMask, mapMask } from './map-mask-cache.ts'
 
-export const PLACE_SOURCES = ['frame', 'neighbour'] as const
-export type PlaceSource = (typeof PLACE_SOURCES)[number]
+const PLACE_SOURCES = ['frame', 'neighbour'] as const
+type PlaceSource = (typeof PLACE_SOURCES)[number]
 
 export type PlaceSuggestion = {
   mapId: MapId
