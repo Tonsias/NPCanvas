@@ -41,11 +41,25 @@ export async function decodeMask(file: MediaFile, rect?: PixelRect): Promise<Fra
 // unreadable (folder reconnect still pending) gets retried on the next press rather than stuck.
 const cache = new Map<MapId, { fileName: string; mask: FrameMask }>()
 
+// A capture's own search and #169's one-ahead precompute can both ask for the same map's mask
+// before either decode finishes (their rings usually overlap near `from`) — keyed by `MapId` and
+// `fileName` like `cache` itself, so a re-import while a decode is in flight starts its own entry
+// rather than handing the stale decode's result to the newer request.
+const inFlight = new Map<string, Promise<FrameMask | null>>()
+
 export async function mapMask(map: GameMap): Promise<FrameMask | null> {
   const cached = cache.get(map.id)
   if (cached !== undefined && cached.fileName === map.file.fileName) return cached.mask
 
-  const mask = await decodeMask(map.file)
-  if (mask !== null) cache.set(map.id, { fileName: map.file.fileName, mask })
-  return mask
+  const key = `${map.id}:${map.file.fileName}`
+  const pending = inFlight.get(key)
+  if (pending !== undefined) return pending
+
+  const decode = decodeMask(map.file).then((mask) => {
+    inFlight.delete(key)
+    if (mask !== null) cache.set(map.id, { fileName: map.file.fileName, mask })
+    return mask
+  })
+  inFlight.set(key, decode)
+  return decode
 }

@@ -16,8 +16,10 @@ import { dispatch } from '../project/store.ts'
 import { dialoguesInAnyQuest } from '../quest/quest-index.ts'
 import type {
   CanvasTool,
+  Dialogue,
   DialogueId,
   GameMap,
+  MapId,
   PendingCaptureId,
   ProjectFile,
   RelevanceTagId,
@@ -48,6 +50,20 @@ import {
 import './MapScreen.css'
 
 type CanvasRoute = Extract<Route, { kind: 'canvas' }>
+
+// #169: the next capture's own search, computed while its predecessor's card is still on screen,
+// so paging to it shows an answer that is already there. `assumedFromMapId` is the map the
+// currently-selected suggestion points at — the ring the real search would use once that
+// suggestion is committed — and `maps`/`dialogues` are the document slices it was built against,
+// so a change underneath it (a moved, re-imported, or removed map) is caught by reference before
+// the result is ever redeemed.
+type Precomputed = {
+  captureId: PendingCaptureId
+  assumedFromMapId: MapId
+  maps: readonly GameMap[]
+  dialogues: readonly Dialogue[]
+  suggestions: readonly PlaceSuggestion[]
+}
 
 export function MapScreen({
   project,
@@ -117,6 +133,14 @@ export function MapScreen({
   previousCaptureIndex.current = captureIndex
   const currentCapture = project.pendingCaptures[captureIndex] ?? null
 
+  // The capture right after the current one in queue order — the same item that will occupy
+  // `captureIndex` once the current one is committed (#169). Null past the end of the queue.
+  const nextCapture = project.pendingCaptures[captureIndex + 1] ?? null
+
+  // Redeemed by the suggestions effect below exactly once, for exactly the capture it names — a
+  // ref rather than state, since consuming it must not itself trigger a redundant re-search.
+  const precomputeHandoffRef = useRef<Precomputed | null>(null)
+
   // The frame candidates plus the clock's guess (#168, wiring #167's ring search into #164's
   // card). Async, so this is state built by an effect rather than a useMemo — decoding a map's
   // mask reads a file. `from` is the neighbour's map: the picture search has no notion of "where
@@ -125,9 +149,16 @@ export function MapScreen({
   useEffect(() => {
     if (!suggesting || currentCapture === null) {
       setSuggestions(NO_SUGGESTIONS)
+      precomputeHandoffRef.current = null
       return
     }
     const capture = currentCapture
+    const handoff = precomputeHandoffRef.current
+    precomputeHandoffRef.current = null
+    if (handoff !== null && handoff.captureId === capture.id) {
+      setSuggestions(handoff.suggestions)
+      return
+    }
     let cancelled = false
     setSuggestions(NO_SUGGESTIONS) // clears a previous capture's stale candidates while this one decodes
     const neighbour = suggestFromNeighbour(capture, project.dialogues, project.maps)
@@ -158,6 +189,38 @@ export function MapScreen({
 
   const selectedSuggestion = suggestions[selectedSuggestionIndex] ?? null
 
+  // #169: kept only for the one capture ahead — `nextCapture` is never more than one — and only
+  // while its assumption still holds. Depends on `selectedSuggestion`, so changing the highlighted
+  // candidate on the current card (1/2/3/g/arrows) restarts the precompute from the newly assumed
+  // map, same as committing would; the in-flight search this replaces is cancelled below.
+  const [precomputed, setPrecomputed] = useState<Precomputed | null>(null)
+  useEffect(() => {
+    if (!suggesting || nextCapture === null || selectedSuggestion === null) {
+      setPrecomputed(null)
+      return
+    }
+    const capture = nextCapture
+    const assumedFromMapId = selectedSuggestion.mapId
+    const maps = project.maps
+    const dialogues = project.dialogues
+    const profiles = project.captureProfiles
+    let cancelled = false
+    const fromMap = maps.find((map) => map.id === assumedFromMapId) ?? null
+    void buildRingSearch(capture, maps, profiles, fromMap).then((search) => {
+      if (cancelled) return
+      setPrecomputed({
+        captureId: capture.id,
+        assumedFromMapId,
+        maps,
+        dialogues,
+        suggestions: suggestPlacement(search, capture, dialogues, maps),
+      })
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [suggesting, nextCapture, selectedSuggestion, project.maps, project.dialogues, project.captureProfiles])
+
   const onChangeSuggestionIndex = useCallback(
     (index: number) => setSelectedSuggestionIndex(index),
     [],
@@ -165,14 +228,26 @@ export function MapScreen({
 
   const onCommitSuggestion = useCallback(() => {
     if (currentCapture === null || selectedSuggestion === null) return
+    const committedMapId = selectedSuggestion.mapId
+    // The precompute is only good for the capture that follows this one, and only if it assumed
+    // landing on the very map this commit is about to place onto, against the document as it
+    // stands right now — otherwise the ring it built starts from a map the real search wouldn't.
+    precomputeHandoffRef.current =
+      precomputed !== null &&
+      precomputed.captureId === nextCapture?.id &&
+      precomputed.assumedFromMapId === committedMapId &&
+      precomputed.maps === project.maps &&
+      precomputed.dialogues === project.dialogues
+        ? precomputed
+        : null
     dispatch({
       kind: 'pending-capture/placed',
       captureId: currentCapture.id,
       dialogueId: newDialogueId(),
-      mapId: selectedSuggestion.mapId,
+      mapId: committedMapId,
       position: selectedSuggestion.position,
     })
-  }, [currentCapture, selectedSuggestion])
+  }, [currentCapture, selectedSuggestion, precomputed, nextCapture, project.maps, project.dialogues])
   // Auto-cancels rather than leaving a dangling arm: closing the panel or selecting elsewhere
   // means there is no longer a "points at" list on screen for a resolved click to land in.
   useEffect(() => {
