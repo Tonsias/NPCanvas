@@ -81,16 +81,10 @@ export function withResults(
   return { order: search.order, depth: search.depth + toScore.length, results: merged }
 }
 
-// The captured frame is the whole console screen; only the part above the text box is map
-// (capture-to-dialogue.ts always writes the picture at exactly `profile.nativeWidth` x
-// `nativeHeight`, so the profile it was captured against is found back by matching that size —
-// `PendingCapture` does not carry a profile id). Two profiles calibrated for the same console (a
-// project's "Yellow" and its "Pokedex" profile both target 160x144) can share that size while
-// disagreeing on where the text box starts, so a size match alone cannot say *which* one made this
-// picture. The narrowest of the matches' windows is used regardless — a Pokedex entry has no map
-// in frame either way and is meant to score low everywhere, and a real map screen loses nothing by
-// a few extra rows being cropped away with the text box. `null` when there is no picture yet, or no
-// profile matches at all — a picture whose profile was since deleted has nothing to search a map for.
+// Profile is found back by matching the capture's size against `profile.nativeWidth/nativeHeight`
+// (`PendingCapture` carries no profile id). Same-console profiles can share a size while disagreeing
+// on the text box, so ties use the narrowest window — a non-map profile scores low everywhere
+// regardless, and a real map loses nothing by extra cropping. `null` with no picture or no match.
 async function captureWindowMask(
   capture: PendingCapture,
   profiles: readonly CaptureProfile[],
