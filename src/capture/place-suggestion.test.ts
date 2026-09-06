@@ -7,6 +7,8 @@ import {
   mapsToScore,
   orderCandidateMaps,
   PLAYER_IN_WINDOW,
+  RING_DEPTH_DEFAULT,
+  RING_DEPTH_STEP,
   suggestFromNeighbour,
   suggestPlacement,
   topCandidates,
@@ -185,6 +187,25 @@ describe('mapsToScore / withResults', () => {
     const stale = new Map([[ORDER[0], { x: 99, y: 99, score: 0 }]])
     const unchanged = withResults(initial, 4, stale)
     expect(unchanged.results.get(ORDER[0])).toEqual(initial.results.get(ORDER[0]))
+  })
+
+  it('#170: widening twice in a row costs two disjoint slices', () => {
+    const order = Array.from({ length: RING_DEPTH_DEFAULT + 2 * RING_DEPTH_STEP }, (_, index) =>
+      asMapId(`ring-${index}`),
+    )
+    let current = withResults(search(order), RING_DEPTH_DEFAULT, matchesFor(order.slice(0, RING_DEPTH_DEFAULT)))
+
+    const firstWiden = mapsToScore(current, RING_DEPTH_DEFAULT + RING_DEPTH_STEP)
+    expect(firstWiden).toEqual(order.slice(RING_DEPTH_DEFAULT, RING_DEPTH_DEFAULT + RING_DEPTH_STEP))
+    current = withResults(current, RING_DEPTH_DEFAULT + RING_DEPTH_STEP, matchesFor(firstWiden))
+
+    const secondWiden = mapsToScore(current, RING_DEPTH_DEFAULT + 2 * RING_DEPTH_STEP)
+    expect(secondWiden).toEqual(
+      order.slice(RING_DEPTH_DEFAULT + RING_DEPTH_STEP, RING_DEPTH_DEFAULT + 2 * RING_DEPTH_STEP),
+    )
+    // disjoint: nothing the first widen asked for appears in the second's slice
+    expect(secondWiden.some((id) => firstWiden.includes(id))).toBe(false)
+    expect(current.depth).toBe(RING_DEPTH_DEFAULT + RING_DEPTH_STEP)
   })
 })
 

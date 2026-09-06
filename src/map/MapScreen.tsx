@@ -7,8 +7,14 @@ import { clearSelection } from '../app/select.ts'
 import type { CanvasViewState } from '../app/view-state.ts'
 import { CanvasLegend } from '../dialogue/CanvasLegend.tsx'
 import { DialoguePanel } from '../dialogue/DialoguePanel.tsx'
-import type { PlaceSuggestion } from '../capture/place-suggestion.ts'
-import { buildRingSearch, suggestFromNeighbour, suggestPlacement } from '../capture/place-suggestion.ts'
+import type { PlaceSuggestion, RingSearch } from '../capture/place-suggestion.ts'
+import {
+  buildRingSearch,
+  RING_DEPTH_STEP,
+  suggestFromNeighbour,
+  suggestPlacement,
+  widenRingSearch,
+} from '../capture/place-suggestion.ts'
 import { resolveGalleryIndex } from '../media/gallery-index.ts'
 import { byId, questIndexFor } from '../project/derived.ts'
 import { newDialogueId } from '../project/ids.ts'
@@ -62,7 +68,18 @@ type Precomputed = {
   assumedFromMapId: MapId
   maps: readonly GameMap[]
   dialogues: readonly Dialogue[]
-  suggestions: readonly PlaceSuggestion[]
+  search: RingSearch
+}
+
+// The confident top candidate when there is one (baked into `confidence === 1` by
+// suggestPlacement), otherwise the clock's guess — so hammering Enter stays safe, and looking
+// stays possible. Falls to index 0 (whatever the list starts with) when there is no guess to fall
+// back to, which a media-less capture's neighbour-only list already satisfies on its own.
+function defaultSuggestionIndex(suggestions: readonly PlaceSuggestion[]): number {
+  const confidentIndex = suggestions.findIndex((suggestion) => suggestion.confidence === 1)
+  if (confidentIndex !== -1) return confidentIndex
+  const guessIndex = suggestions.findIndex((suggestion) => suggestion.source === 'neighbour')
+  return guessIndex === -1 ? 0 : guessIndex
 }
 
 export function MapScreen({
@@ -141,14 +158,26 @@ export function MapScreen({
   // ref rather than state, since consuming it must not itself trigger a redundant re-search.
   const precomputeHandoffRef = useRef<Precomputed | null>(null)
 
-  // The frame candidates plus the clock's guess (#168, wiring #167's ring search into #164's
-  // card). Async, so this is state built by an effect rather than a useMemo — decoding a map's
-  // mask reads a file. `from` is the neighbour's map: the picture search has no notion of "where
-  // the player probably still is", so the time-nearest dialogue's map stands in for it.
-  const [suggestions, setSuggestions] = useState<readonly PlaceSuggestion[]>(NO_SUGGESTIONS)
+  // Bumped every time the current capture's search restarts — a new capture, entering/leaving
+  // suggest mode. #170's widen captures this at press time and checks it again on completion, so
+  // a widen still in flight when the card changes is dropped instead of clobbering the new card's
+  // search (its own effect below bumps this before starting).
+  const searchEpochRef = useRef(0)
+
+  // The ring search behind the current card's candidates (#167 wired in by #168), kept as state
+  // (not just its derived suggestions) so #170's widen has something to hand back to `withResults`.
+  // Async, so this is built by an effect rather than a useMemo — decoding a map's mask reads a
+  // file. `from` is the neighbour's map: the picture search has no notion of "where the player
+  // probably still is", so the time-nearest dialogue's map stands in for it.
+  const [search, setSearch] = useState<RingSearch | null>(null)
+  const [widening, setWidening] = useState(false)
   useEffect(() => {
+    searchEpochRef.current += 1
+    const epoch = searchEpochRef.current
+    setWidening(false)
+
     if (!suggesting || currentCapture === null) {
-      setSuggestions(NO_SUGGESTIONS)
+      setSearch(null)
       precomputeHandoffRef.current = null
       return
     }
@@ -156,38 +185,67 @@ export function MapScreen({
     const handoff = precomputeHandoffRef.current
     precomputeHandoffRef.current = null
     if (handoff !== null && handoff.captureId === capture.id) {
-      setSuggestions(handoff.suggestions)
+      setSearch(handoff.search)
+      setSelectedSuggestionIndex(
+        defaultSuggestionIndex(suggestPlacement(handoff.search, capture, project.dialogues, project.maps)),
+      )
       return
     }
-    let cancelled = false
-    setSuggestions(NO_SUGGESTIONS) // clears a previous capture's stale candidates while this one decodes
+    setSearch(null) // clears a previous capture's stale candidates while this one decodes
     const neighbour = suggestFromNeighbour(capture, project.dialogues, project.maps)
     const fromMap =
       neighbour === null ? null : (project.maps.find((map) => map.id === neighbour.mapId) ?? null)
-    void buildRingSearch(capture, project.maps, project.captureProfiles, fromMap).then((search) => {
-      if (cancelled) return
-      setSuggestions(suggestPlacement(search, capture, project.dialogues, project.maps))
+    void buildRingSearch(capture, project.maps, project.captureProfiles, fromMap).then((built) => {
+      if (searchEpochRef.current !== epoch) return
+      setSearch(built)
+      setSelectedSuggestionIndex(
+        defaultSuggestionIndex(suggestPlacement(built, capture, project.dialogues, project.maps)),
+      )
     })
-    return () => {
-      cancelled = true
-    }
   }, [suggesting, currentCapture, project.dialogues, project.maps, project.captureProfiles])
 
-  // The top frame candidate when it clears isConfident (baked into `confidence === 1` by
-  // suggestPlacement), otherwise the clock's guess — so hammering Enter stays safe, and looking
-  // stays possible. Falls to index 0 (whatever the list starts with) when there is no guess to
-  // fall back to, which a media-less capture's neighbour-only list already satisfies on its own.
-  useEffect(() => {
-    const confidentIndex = suggestions.findIndex((suggestion) => suggestion.confidence === 1)
-    if (confidentIndex !== -1) {
-      setSelectedSuggestionIndex(confidentIndex)
-      return
-    }
-    const guessIndex = suggestions.findIndex((suggestion) => suggestion.source === 'neighbour')
-    setSelectedSuggestionIndex(guessIndex === -1 ? 0 : guessIndex)
-  }, [suggestions])
+  const suggestions = useMemo(
+    () =>
+      search === null || currentCapture === null
+        ? NO_SUGGESTIONS
+        : suggestPlacement(search, currentCapture, project.dialogues, project.maps),
+    [search, currentCapture, project.dialogues, project.maps],
+  )
 
   const selectedSuggestion = suggestions[selectedSuggestionIndex] ?? null
+
+  // #170: raises the ring depth for the card in hand only — `search` is reset to
+  // RING_DEPTH_DEFAULT by the effect above the moment the capture, mode or document changes, so a
+  // widened depth never taxes the next capture. Scores only the new slice (`widenRingSearch` calls
+  // `mapsToScore`/`withResults` from #167), and prefers a fresh confident match over the previously
+  // selected candidate, which is kept only if it still made the new top three.
+  const canWiden = search !== null && search.depth < search.order.length
+  const onWiden = useCallback(() => {
+    if (search === null || currentCapture === null || search.depth >= search.order.length) return
+    const capture = currentCapture
+    const maps = project.maps
+    const dialogues = project.dialogues
+    const previousMapId = selectedSuggestion?.mapId ?? null
+    const newDepth = Math.min(search.depth + RING_DEPTH_STEP, search.order.length)
+    const epoch = searchEpochRef.current
+    setWidening(true)
+    void widenRingSearch(search, capture, maps, project.captureProfiles, newDepth).then((widened) => {
+      if (searchEpochRef.current !== epoch) return
+      setWidening(false)
+      setSearch(widened)
+      const widenedSuggestions = suggestPlacement(widened, capture, dialogues, maps)
+      const confidentIndex = widenedSuggestions.findIndex((candidate) => candidate.confidence === 1)
+      if (confidentIndex !== -1) {
+        setSelectedSuggestionIndex(confidentIndex)
+        return
+      }
+      const keptIndex =
+        previousMapId === null
+          ? -1
+          : widenedSuggestions.findIndex((candidate) => candidate.mapId === previousMapId)
+      setSelectedSuggestionIndex(keptIndex !== -1 ? keptIndex : defaultSuggestionIndex(widenedSuggestions))
+    })
+  }, [search, currentCapture, selectedSuggestion, project.maps, project.dialogues, project.captureProfiles])
 
   // #169: kept only for the one capture ahead — `nextCapture` is never more than one — and only
   // while its assumption still holds. Depends on `selectedSuggestion`, so changing the highlighted
@@ -206,14 +264,14 @@ export function MapScreen({
     const profiles = project.captureProfiles
     let cancelled = false
     const fromMap = maps.find((map) => map.id === assumedFromMapId) ?? null
-    void buildRingSearch(capture, maps, profiles, fromMap).then((search) => {
+    void buildRingSearch(capture, maps, profiles, fromMap).then((built) => {
       if (cancelled) return
       setPrecomputed({
         captureId: capture.id,
         assumedFromMapId,
         maps,
         dialogues,
-        suggestions: suggestPlacement(search, capture, dialogues, maps),
+        search: built,
       })
     })
     return () => {
@@ -585,6 +643,11 @@ export function MapScreen({
             selectedSuggestionIndex={selectedSuggestionIndex}
             onChangeSuggestionIndex={onChangeSuggestionIndex}
             onCommitSuggestion={onCommitSuggestion}
+            ringDepth={search?.depth ?? 0}
+            ringTotal={search?.order.length ?? 0}
+            canWiden={canWiden}
+            widening={widening}
+            onWiden={onWiden}
             width={panelWidth}
             onWidthChange={setPanelWidth}
             measureAvailableWidth={measureAvailableWidth}

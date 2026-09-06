@@ -33,6 +33,11 @@ export function PendingCaptureList({
   selectedSuggestionIndex,
   onChangeSuggestionIndex,
   onCommitSuggestion,
+  ringDepth,
+  ringTotal,
+  canWiden,
+  widening,
+  onWiden,
 }: {
   project: ProjectFile
   armedCaptureId: PendingCaptureId | null
@@ -47,6 +52,13 @@ export function PendingCaptureList({
   selectedSuggestionIndex: number
   onChangeSuggestionIndex: (index: number) => void
   onCommitSuggestion: () => void
+  /** #170: how deep the ring behind `suggestions` has been scored, out of how many candidate maps
+   * exist at all — `canWiden` is false once those two meet. */
+  ringDepth: number
+  ringTotal: number
+  canWiden: boolean
+  widening: boolean
+  onWiden: () => void
 }): ReactElement {
   const npcNames = npcNamesIn(project.dialogues)
   const captures = project.pendingCaptures
@@ -118,6 +130,13 @@ export function PendingCaptureList({
         event.preventDefault()
         return
       }
+      // #170: widens the ring by RING_DEPTH_STEP and re-ranks. Absent once the whole document has
+      // been scored, and ignored mid-widen so a held key can't queue a second one.
+      if ((event.key === 'w' || event.key === 'W') && canWiden && !widening) {
+        onWiden()
+        event.preventDefault()
+        return
+      }
     }
 
     if (!paged) return
@@ -158,6 +177,11 @@ export function PendingCaptureList({
           suggestions={suggestions}
           selectedSuggestionIndex={selectedSuggestionIndex}
           onChangeSuggestionIndex={onChangeSuggestionIndex}
+          ringDepth={ringDepth}
+          ringTotal={ringTotal}
+          canWiden={canWiden}
+          widening={widening}
+          onWiden={onWiden}
         />
       )}
     </div>
@@ -181,6 +205,11 @@ function CaptureCard({
   suggestions,
   selectedSuggestionIndex,
   onChangeSuggestionIndex,
+  ringDepth,
+  ringTotal,
+  canWiden,
+  widening,
+  onWiden,
 }: {
   project: ProjectFile
   capture: PendingCapture
@@ -198,6 +227,11 @@ function CaptureCard({
   suggestions: readonly PlaceSuggestion[]
   selectedSuggestionIndex: number
   onChangeSuggestionIndex: (index: number) => void
+  ringDepth: number
+  ringTotal: number
+  canWiden: boolean
+  widening: boolean
+  onWiden: () => void
 }): ReactElement {
   const editable = useEditableRow()
   const firstMedium = capture.media[0] ?? null
@@ -318,8 +352,29 @@ function CaptureCard({
               ))}
             </ul>
           )}
+          {ringTotal > 0 && (
+            <div className="pending-capture-list__suggestion-ring">
+              <p className="pending-capture-list__suggestion-ring-status hint-text" role="status">
+                {widening
+                  ? 'Widening…'
+                  : `Searched ${ringDepth} of ${ringTotal} map${ringTotal === 1 ? '' : 's'}`}
+              </p>
+              {canWiden && (
+                <button
+                  type="button"
+                  className="button pending-capture-list__suggestion-widen"
+                  disabled={widening}
+                  onClick={onWiden}
+                  title="Search further out and re-rank (w)"
+                >
+                  Widen search
+                </button>
+              )}
+            </div>
+          )}
           <p className="pending-capture-list__suggestion-hint hint-text">
-            1/2/3 or g to pick · Enter to place here · Escape to stop suggesting
+            1/2/3 or g to pick{canWiden ? ' · w to widen the search' : ''} · Enter to place here ·
+            Escape to stop suggesting
           </p>
         </div>
       )}

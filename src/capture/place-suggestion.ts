@@ -108,6 +108,22 @@ async function captureWindowMask(
   return decodeMask(media.file, rect)
 }
 
+// Shared body of a first search and a widen (#170), so neither re-decodes a map the other scored.
+async function scoreAgainstWindow(
+  ids: readonly MapId[],
+  windowMask: FrameMask,
+  maps: readonly GameMap[],
+): Promise<ReadonlyMap<MapId, WindowMatch | null>> {
+  const scored = await Promise.all(
+    ids.map(async (mapId): Promise<readonly [MapId, WindowMatch | null]> => {
+      const map = maps.find((candidate) => candidate.id === mapId)
+      const mask = map === undefined ? null : await mapMask(map)
+      return [mapId, mask === null ? null : locateWindow(windowMask, mask)]
+    }),
+  )
+  return new Map(scored)
+}
+
 // Scores the maps inside `RING_DEPTH_DEFAULT` of `order` against `capture`'s own frame — the
 // wiring #167 left undone. No decode and no search at all when the capture has no picture, so a
 // press over a capture with nothing to look at never touches the mask cache.
@@ -120,21 +136,32 @@ export async function buildRingSearch(
   const order = orderCandidateMaps(from, maps)
   const depth = Math.min(RING_DEPTH_DEFAULT, order.length)
   const toScore = order.slice(0, depth)
-  const results = new Map<MapId, WindowMatch | null>()
 
   const windowMask = await captureWindowMask(capture, profiles)
-  if (windowMask !== null) {
-    const scored = await Promise.all(
-      toScore.map(async (mapId): Promise<readonly [MapId, WindowMatch | null]> => {
-        const map = maps.find((candidate) => candidate.id === mapId)
-        const mask = map === undefined ? null : await mapMask(map)
-        return [mapId, mask === null ? null : locateWindow(windowMask, mask)]
-      }),
-    )
-    for (const [mapId, match] of scored) results.set(mapId, match)
-  }
+  const results =
+    windowMask === null ? new Map<MapId, WindowMatch | null>() : await scoreAgainstWindow(toScore, windowMask, maps)
 
   return { order, depth, results }
+}
+
+// #170: widens `search` to `depth` via `mapsToScore`/`withResults`, scoring only the new slice.
+export async function widenRingSearch(
+  search: RingSearch,
+  capture: PendingCapture,
+  maps: readonly GameMap[],
+  profiles: readonly CaptureProfile[],
+  depth: number,
+): Promise<RingSearch> {
+  const toScore = mapsToScore(search, depth)
+  if (toScore.length === 0) return search
+
+  const windowMask = await captureWindowMask(capture, profiles)
+  const results =
+    windowMask === null
+      ? new Map<MapId, WindowMatch | null>(toScore.map((id) => [id, null]))
+      : await scoreAgainstWindow(toScore, windowMask, maps)
+
+  return withResults(search, depth, results)
 }
 
 export type MapCandidate = {

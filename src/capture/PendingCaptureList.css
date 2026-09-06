@@ -184,6 +184,26 @@
   font-size: var(--text-2xs);
 }
 
+/* #170: the current ring depth and the control to widen it, between the candidate list and the
+   hint line. */
+.pending-capture-list__suggestion-ring {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.pending-capture-list__suggestion-ring-status {
+  margin: 0;
+  font-size: var(--text-2xs);
+}
+
+.pending-capture-list__suggestion-widen {
+  flex-shrink: 0;
+  font-size: var(--text-2xs);
+  padding: var(--space-1) var(--space-2);
+}
+
 /* `.pending-capture-list__actions` (index.css) supplies the layout. */
 .pending-capture-list__actions .button[data-armed] {
   color: var(--accent-contrast);

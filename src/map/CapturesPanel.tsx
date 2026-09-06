@@ -21,6 +21,11 @@ export function CapturesPanel({
   selectedSuggestionIndex,
   onChangeSuggestionIndex,
   onCommitSuggestion,
+  ringDepth,
+  ringTotal,
+  canWiden,
+  widening,
+  onWiden,
   width,
   onWidthChange,
   measureAvailableWidth,
@@ -36,6 +41,11 @@ export function CapturesPanel({
   selectedSuggestionIndex: number
   onChangeSuggestionIndex: (index: number) => void
   onCommitSuggestion: () => void
+  ringDepth: number
+  ringTotal: number
+  canWiden: boolean
+  widening: boolean
+  onWiden: () => void
   width: number | null
   onWidthChange: (width: number) => void
   measureAvailableWidth: () => number
@@ -65,6 +75,11 @@ export function CapturesPanel({
         selectedSuggestionIndex={selectedSuggestionIndex}
         onChangeSuggestionIndex={onChangeSuggestionIndex}
         onCommitSuggestion={onCommitSuggestion}
+        ringDepth={ringDepth}
+        ringTotal={ringTotal}
+        canWiden={canWiden}
+        widening={widening}
+        onWiden={onWiden}
       />
     </SidePanel>
   )
