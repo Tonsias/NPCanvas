@@ -9,6 +9,7 @@ import type { GameMap, MapId, ProjectFile } from '../project/types.ts'
 import { discardMediaFile } from '../media/discard-media.ts'
 import { MapImportButton } from './MapImportButton.tsx'
 import { useRowFocus } from './row-focus.ts'
+import { Icon } from '../app/Icon.tsx'
 
 export function MapList({ project }: { project: ProjectFile }): ReactElement {
   function onFocus(map: GameMap): void {
@@ -99,11 +100,25 @@ function MapRow({
         {map.name}
       </button>
       <RowActions>
-        <button ref={triggerRef.rename} type="button" className="button" onClick={editable.openRename}>
-          Rename
+        <button
+          ref={triggerRef.rename}
+          type="button"
+          className="button"
+          aria-label={`Rename ${map.name}`}
+          title="Rename"
+          onClick={editable.openRename}
+        >
+          <Icon name="pencil" />
         </button>
-        <button ref={triggerRef.delete} type="button" className="button" onClick={editable.openDelete}>
-          Delete
+        <button
+          ref={triggerRef.delete}
+          type="button"
+          className="button"
+          aria-label={`Delete ${map.name}`}
+          title="Delete"
+          onClick={editable.openDelete}
+        >
+          <Icon name="trash" />
         </button>
       </RowActions>
     </>

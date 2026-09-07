@@ -32,6 +32,7 @@ import {
   tally,
   totalOf,
 } from './relevance-segments.ts'
+import { Icon } from '../app/Icon.tsx'
 
 // Derived on every read — nothing here is stored.
 type NpcProfile = {
@@ -300,8 +301,14 @@ function RenameForm({
       <div className="npc-dossier__rename row-actions-host">
         <h3 className="npc-dossier__title">{profile.label}</h3>
         <RowActions>
-          <button type="button" className="button" onClick={() => setRenaming(true)}>
-            Rename
+          <button
+            type="button"
+            className="button"
+            aria-label={`Rename ${profile.label}`}
+            title="Rename"
+            onClick={() => setRenaming(true)}
+          >
+            <Icon name="pencil" />
           </button>
         </RowActions>
       </div>
@@ -361,8 +368,14 @@ function RenameFields({
       <button type="submit" className="button" disabled={next === profile.key}>
         {next === '' ? 'Clear name' : 'Rename'}
       </button>
-      <button type="button" className="button" onClick={() => onDone(null)}>
-        Cancel
+      <button
+        type="button"
+        className="button"
+        aria-label="Cancel"
+        title="Cancel"
+        onClick={() => onDone(null)}
+      >
+        <Icon name="close" />
       </button>
       {merges && (
         <p className="npc-dossier__merge" role="status">

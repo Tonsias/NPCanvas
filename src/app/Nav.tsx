@@ -7,6 +7,7 @@ import { saveNow } from '../storage/autosave.ts'
 import { connectToNewDirectory } from '../storage/project-directory.ts'
 import type { Route } from './route.ts'
 import { formatRoute, navigate, useRoute } from './route.ts'
+import { Icon } from './Icon.tsx'
 import './app.css'
 
 // Real anchors, not buttons: the hash is the navigation mechanism, so middle-click,
@@ -82,7 +83,7 @@ function HistoryControls({ history }: { history: History }): ReactElement {
         aria-label="Undo"
         title="Undo (Ctrl+Z)"
       >
-        Undo
+        <Icon name="undo" />
       </button>
       <button
         type="button"
@@ -92,7 +93,7 @@ function HistoryControls({ history }: { history: History }): ReactElement {
         aria-label="Redo"
         title="Redo (Ctrl+Shift+Z)"
       >
-        Redo
+        <Icon name="redo" />
       </button>
     </div>
   )

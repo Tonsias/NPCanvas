@@ -10,6 +10,7 @@ import { dispatch } from '../project/store.ts'
 import type { GameMap, ProjectFile, Zone, ZoneId } from '../project/types.ts'
 import { useRowFocus } from './row-focus.ts'
 import { ZONE_HUES, zoneHueStyle } from './zone-style.ts'
+import { Icon } from '../app/Icon.tsx'
 
 export function ZoneList({
   project,
@@ -139,14 +140,35 @@ function ZoneRow({
         </span>
       </button>
       <RowActions>
-        <button ref={triggerRef.rename} type="button" className="button" onClick={editable.openRename}>
-          Rename
+        <button
+          ref={triggerRef.rename}
+          type="button"
+          className="button"
+          aria-label={`Rename ${zone.name}`}
+          title="Rename"
+          onClick={editable.openRename}
+        >
+          <Icon name="pencil" />
         </button>
-        <button ref={triggerRef.colour} type="button" className="button" onClick={() => setColouring(true)}>
-          Colour
+        <button
+          ref={triggerRef.colour}
+          type="button"
+          className="button"
+          aria-label={`Change the colour of ${zone.name}`}
+          title="Colour"
+          onClick={() => setColouring(true)}
+        >
+          <Icon name="droplet" />
         </button>
-        <button ref={triggerRef.delete} type="button" className="button" onClick={editable.openDelete}>
-          Delete
+        <button
+          ref={triggerRef.delete}
+          type="button"
+          className="button"
+          aria-label={`Delete ${zone.name}`}
+          title="Delete"
+          onClick={editable.openDelete}
+        >
+          <Icon name="trash" />
         </button>
       </RowActions>
     </>

@@ -3,6 +3,7 @@ import { useAlertDialogFocus } from '../dialog-focus.ts'
 import { dispatch } from '../project/store.ts'
 import type { Glyph } from '../project/types.ts'
 import { GlyphTile } from './GlyphTile.tsx'
+import { Icon } from '../app/Icon.tsx'
 import './GlyphSet.css'
 
 /**
@@ -79,9 +80,10 @@ export function GlyphSet({
                       ? 'Forget the tile marked not text'
                       : `Forget the tile read as ${glyph.char}`
                   }
+                  title="Forget this tile"
                   onClick={() => dispatch({ kind: 'glyph/forgotten', bits: glyph.bits })}
                 >
-                  Forget
+                  <Icon name="trash" />
                 </button>
               </li>
             ))}
@@ -89,8 +91,14 @@ export function GlyphSet({
         )}
 
         <footer className="panel-footer">
-          <button type="button" className="glyph-set__button button--primary" onClick={onClose}>
-            Done
+          <button
+            type="button"
+            className="glyph-set__button button--primary"
+            aria-label="Done"
+            title="Done"
+            onClick={onClose}
+          >
+            <Icon name="check" />
           </button>
         </footer>
       </div>

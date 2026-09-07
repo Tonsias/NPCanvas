@@ -16,6 +16,7 @@ import {
   snapToTileGrid,
   tileStep,
 } from './capture-profile.ts'
+import { Icon } from '../app/Icon.tsx'
 import './CaptureCalibration.css'
 
 // The screen comes first because the text box is stored in native pixels, and there is no native
@@ -349,8 +350,14 @@ export function CaptureCalibration({
             <span>{textRect === null ? 'Text box not drawn' : describeTextRect(textRect)}</span>
           </p>
           <div className="capture-calibration__actions">
-            <button type="button" className="capture-calibration__button button" onClick={onCancel}>
-              Cancel
+            <button
+              type="button"
+              className="capture-calibration__button button"
+              aria-label="Cancel"
+              title="Cancel"
+              onClick={onCancel}
+            >
+              <Icon name="close" />
             </button>
             <button
               type="button"
@@ -367,8 +374,10 @@ export function CaptureCalibration({
                   textRect,
                 })
               }}
+              aria-label="Save profile"
+              title="Save profile"
             >
-              Save profile
+              <Icon name="check" />
             </button>
           </div>
         </footer>

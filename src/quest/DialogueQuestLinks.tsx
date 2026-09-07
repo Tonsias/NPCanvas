@@ -6,6 +6,7 @@ import { newQuestId } from '../project/ids.ts'
 import { dispatch } from '../project/store.ts'
 import type { Dialogue, Quest, QuestId } from '../project/types.ts'
 import { nextQuestHue, questAccentStyle } from './quest-style.ts'
+import { Icon } from '../app/Icon.tsx'
 import './DialogueQuestLinks.css'
 
 type LinkMode = { kind: 'idle' } | { kind: 'attaching' }
@@ -60,11 +61,13 @@ export function DialogueQuestLinks({
               <button
                 type="button"
                 className="button"
+                aria-label={`Detach from ${questName(quest)}`}
+                title="Detach"
                 onClick={() =>
                   dispatch({ kind: 'quest/dialogue-detached', questId: quest.id, dialogueId })
                 }
               >
-                Detach
+                <Icon name="unlink" />
               </button>
             </li>
           ))}

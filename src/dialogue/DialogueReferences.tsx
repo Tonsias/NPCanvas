@@ -2,8 +2,10 @@ import type { ReactElement } from 'react'
 import { useMemo } from 'react'
 import { selectDialogue } from '../app/select.ts'
 import { resolveZones, zoneLabel } from '../dialogue-row/dialogue-summary.ts'
+import { npcKey, npcLabel } from '../insights/filters.ts'
 import { dispatch } from '../project/store.ts'
 import type { Dialogue, DialogueId, Zone, ZoneId } from '../project/types.ts'
+import { Icon } from '../app/Icon.tsx'
 import './DialogueReferences.css'
 
 // "Points at" is dialogue.references, edited here. "Pointed at by" is derived by scanning every
@@ -56,6 +58,8 @@ export function DialogueReferences({
               <button
                 type="button"
                 className="button"
+                aria-label={`Stop pointing at ${npcLabel(npcKey(target))}`}
+                title="Remove"
                 onClick={() =>
                   dispatch({
                     kind: 'dialogue/reference-removed',
@@ -64,7 +68,7 @@ export function DialogueReferences({
                   })
                 }
               >
-                Remove
+                <Icon name="trash" />
               </button>
             </li>
           ))}
@@ -76,8 +80,14 @@ export function DialogueReferences({
           <p className="dialogue-references__picking-hint hint-text">
             Click the pin it should point at…
           </p>
-          <button type="button" className="button" onClick={onCancelPick}>
-            Cancel
+          <button
+            type="button"
+            className="button"
+            aria-label="Cancel"
+            title="Cancel"
+            onClick={onCancelPick}
+          >
+            <Icon name="close" />
           </button>
         </div>
       ) : (

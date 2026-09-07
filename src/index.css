@@ -230,6 +230,24 @@ body {
     opacity var(--duration-fast) var(--ease-standard);
 }
 
+.icon {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  display: block;
+}
+
+/* Chromium-only, so `:has` can square an icon-only button here rather than making every one of
+   the ~50 call sites also name a modifier class — and a button that later regains a word loses
+   the squaring on its own. */
+.button:has(> .icon:only-child),
+.button--primary:has(> .icon:only-child) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-inline: var(--space-1);
+}
+
 .button:hover:not(:disabled) {
   color: var(--text);
   background: var(--surface-3);
@@ -571,10 +589,8 @@ body {
 }
 
 /* The `.button` base (index.css) supplies the box, hover and focus ring; this is only the
-   larger glyph size and the transparent resting background, shared by both banners' dismiss. */
+   transparent resting background, shared by both banners' dismiss. */
 .shell-banner__dismiss {
-  font-size: 1.125rem;
-  line-height: 1;
   background: transparent;
 }
 

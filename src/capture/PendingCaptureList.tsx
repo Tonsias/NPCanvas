@@ -15,6 +15,7 @@ import type { PendingCapture, PendingCaptureId, ProjectFile } from '../project/t
 import { isTextFieldFocused } from '../text-field-focus.ts'
 import type { PlaceSuggestion } from './place-suggestion.ts'
 import { useWatchState } from './capture-watch.ts'
+import { Icon } from '../app/Icon.tsx'
 import './PendingCaptureList.css'
 
 // The triage queue, one capture at a time: several waiting conversations are alternatives to page
@@ -365,9 +366,10 @@ function CaptureCard({
                   className="button pending-capture-list__suggestion-widen"
                   disabled={widening}
                   onClick={onWiden}
+                  aria-label="Widen search"
                   title="Search further out and re-rank (w)"
                 >
-                  Widen search
+                  <Icon name="search" />
                 </button>
               )}
             </div>
@@ -416,8 +418,14 @@ function CaptureCard({
             className="pending-capture-list__confirm"
           />
         ) : (
-          <button type="button" className="button" onClick={editable.openDelete}>
-            Delete
+          <button
+            type="button"
+            className="button"
+            aria-label="Delete this capture"
+            title="Delete"
+            onClick={editable.openDelete}
+          >
+            <Icon name="trash" />
           </button>
         )}
       </div>

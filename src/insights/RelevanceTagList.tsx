@@ -11,6 +11,7 @@ import { useRowFocus } from '../map/row-focus.ts'
 import { newRelevanceTagId } from '../project/ids.ts'
 import { dispatch } from '../project/store.ts'
 import type { Dialogue, RelevanceTag, RelevanceTagId } from '../project/types.ts'
+import { Icon } from '../app/Icon.tsx'
 
 // toIndex is advanced by each move rather than read back from dragPreview at commit time — a
 // commit can land in the same tick as the move that produced it, before React re-renders.
@@ -107,8 +108,14 @@ export function RelevanceTagList({
           The vocabulary every chip, band and chart segment draws from. Delete one and every line
           carrying it simply goes untagged — nothing else about those lines changes.
         </p>
-        <button type="button" className="button--primary" onClick={createTag}>
-          New tag
+        <button
+          type="button"
+          className="button--primary"
+          aria-label="New tag"
+          title="New tag"
+          onClick={createTag}
+        >
+          <Icon name="plus" />
         </button>
       </header>
 
@@ -244,45 +251,50 @@ function RelevanceTagRow({
           className="button"
           aria-label={`Move ${tagLabel(tag)} up`}
           disabled={index === 0}
+          title="Move up"
           onClick={() => onMove(index - 1)}
         >
-          Move up
+          <Icon name="chevron-up" />
         </button>
         <button
           type="button"
           className="button"
           aria-label={`Move ${tagLabel(tag)} down`}
           disabled={index === count - 1}
+          title="Move down"
           onClick={() => onMove(index + 1)}
         >
-          Move down
+          <Icon name="chevron-down" />
         </button>
         <button
           ref={triggerRef.rename}
           type="button"
           className="button"
           aria-label={`Rename ${tagLabel(tag)}`}
+          title="Rename"
           onClick={editable.openRename}
         >
-          Rename
+          <Icon name="pencil" />
         </button>
         <button
           ref={triggerRef.colour}
           type="button"
           className="button"
           aria-label={`Change the colour of ${tagLabel(tag)}`}
+          title="Colour"
           onClick={() => setColouring(true)}
         >
-          Colour
+          <Icon name="droplet" />
         </button>
         <button
           ref={triggerRef.delete}
           type="button"
           className="button"
           aria-label={`Delete ${tagLabel(tag)}`}
+          title="Delete"
           onClick={editable.openDelete}
         >
-          Delete
+          <Icon name="trash" />
         </button>
       </RowActions>
     </>

@@ -20,6 +20,7 @@ import { HeldNote } from './HeldNote.tsx'
 import type { CaptureProfile, Glyph, PendingCapture } from '../project/types.ts'
 import { dispatch, useAppStateExceptSave } from '../project/store.ts'
 import { describeError } from '../storage/project-directory.ts'
+import { Icon } from '../app/Icon.tsx'
 import './CaptureRecorder.css'
 
 type HeldCaptureState =
@@ -129,9 +130,10 @@ export function CaptureRecorder(): ReactElement {
                 : (blocker ??
                   'Start a new conversation — every box that comes to rest is recorded into it')
             }
+            aria-label={watching ? 'Stop' : 'New capture'}
             onClick={() => trigger('new')}
           >
-            {watching ? 'Stop' : 'New capture'}
+            <Icon name={watching ? 'stop' : 'record'} />
           </button>
           <button
             type="button"
@@ -140,9 +142,10 @@ export function CaptureRecorder(): ReactElement {
             aria-pressed={watching}
             disabled={blocker !== null && !watching}
             title={watching ? 'Stop reading the text box' : (blocker ?? extendTitle)}
+            aria-label={watching ? 'Stop' : 'Extend last'}
             onClick={() => trigger('extend')}
           >
-            {watching ? 'Stop' : 'Extend last'}
+            <Icon name={watching ? 'stop' : 'plus-circle'} />
           </button>
         </div>
       </div>

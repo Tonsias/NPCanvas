@@ -30,6 +30,7 @@ import type {
 import { QUEST_STATUSES } from '../project/types.ts'
 import { QuestForm } from './QuestForm.tsx'
 import { QUEST_HUES, nextQuestHue, questAccentStyle, questHueStyle } from './quest-style.ts'
+import { Icon } from '../app/Icon.tsx'
 import './QuestBoard.css'
 
 // One mode for the whole board, not one per card — only one card can be mid-edit.
@@ -131,8 +132,14 @@ export function QuestBoard({
     <section className="quest-board">
       <header className="quest-board__bar">
         <h1 className="screen-title">Quest board</h1>
-        <button type="button" className="button--primary" onClick={createQuest}>
-          New quest
+        <button
+          type="button"
+          className="button--primary"
+          aria-label="New quest"
+          title="New quest"
+          onClick={createQuest}
+        >
+          <Icon name="plus" />
         </button>
       </header>
 
@@ -307,25 +314,28 @@ function QuestCard({
             type="button"
             className="button"
             aria-label={`Edit ${name}`}
+            title="Edit"
             onClick={() => onSetMode({ kind: 'editing', id: quest.id })}
           >
-            Edit
+            <Icon name="pencil" />
           </button>
           <button
             type="button"
             className="button"
             aria-label={`Change the colour of ${name}`}
+            title="Colour"
             onClick={() => onSetMode({ kind: 'recolouring', id: quest.id })}
           >
-            Colour
+            <Icon name="droplet" />
           </button>
           <button
             type="button"
             className="button"
             aria-label={`Delete ${name}`}
+            title="Delete"
             onClick={editable.openDelete}
           >
-            Delete
+            <Icon name="trash" />
           </button>
         </RowActions>
       </header>
@@ -370,6 +380,7 @@ function QuestCard({
                   type="button"
                   className="button"
                   aria-label={`Detach ${npcLabel(npcKey(dialogue))}: ${dialogueSnippet(dialogue)} from ${name}`}
+                  title="Detach"
                   onClick={() =>
                     dispatch({
                       kind: 'quest/dialogue-detached',
@@ -378,7 +389,7 @@ function QuestCard({
                     })
                   }
                 >
-                  Detach
+                  <Icon name="unlink" />
                 </button>
               </li>
             ))}
@@ -409,9 +420,11 @@ function QuestCardMode({
           <button
             type="button"
             className="button"
+            aria-label={`Attach a dialogue to ${name}`}
+            title="Attach dialogue"
             onClick={() => onSetMode({ kind: 'attaching', id: quest.id })}
           >
-            Attach dialogue
+            <Icon name="link" />
           </button>
         </div>
       )

@@ -53,6 +53,7 @@ import {
   indexDialoguesByZone,
   reindexMovedZone,
 } from './zone-index.ts'
+import { Icon } from '../app/Icon.tsx'
 import './MapScreen.css'
 
 type CanvasRoute = Extract<Route, { kind: 'canvas' }>
@@ -517,8 +518,14 @@ export function MapScreen({
         <aside className="map-screen__sidebar">
           <h1 className="visually-hidden">Canvas</h1>
           <div className="map-screen__tools">
-            <button type="button" className="button" onClick={() => setDisplayDialogOpen(true)}>
-              Display…
+            <button
+              type="button"
+              className="button"
+              aria-label="Display options"
+              title="Display options"
+              onClick={() => setDisplayDialogOpen(true)}
+            >
+              <Icon name="sliders" />
             </button>
             <ToolPicker tool={tool} onChange={setTool} />
           </div>

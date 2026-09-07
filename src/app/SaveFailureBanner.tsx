@@ -2,6 +2,7 @@ import type { ReactElement } from 'react'
 import { useSaveState } from '../project/store.ts'
 import type { SaveState } from '../project/types.ts'
 import { retrySave } from '../storage/autosave.ts'
+import { Icon } from './Icon.tsx'
 import './app.css'
 
 type FailedSave = Extract<SaveState, { kind: 'failed' }>
@@ -61,7 +62,7 @@ function FailedBanner({
         onClick={onDismiss}
         aria-label="Dismiss this warning"
       >
-        ×
+        <Icon name="close" />
       </button>
     </div>
   )

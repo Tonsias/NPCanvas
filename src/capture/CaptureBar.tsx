@@ -25,6 +25,7 @@ import { GlyphLearner } from './GlyphLearner.tsx'
 import type { TextBoxReading } from './glyph-matcher.ts'
 import { mergeGlyphs, readTextBox } from './glyph-matcher.ts'
 import { GlyphSet } from './GlyphSet.tsx'
+import { Icon } from '../app/Icon.tsx'
 import './CaptureBar.css'
 
 const ACTION_LABELS: Record<RecorderAction, string> = {
@@ -212,9 +213,11 @@ export function CaptureBar({
             <button
               type="button"
               className="button"
+              aria-label="Disconnect"
+              title="Disconnect this source"
               onClick={() => disconnectCaptureSource()}
             >
-              Disconnect
+              <Icon name="power" />
             </button>
           </>
         )
@@ -287,16 +290,33 @@ export function CaptureBar({
               type="button"
               className="button"
               disabled={source.kind !== 'live' || calibration.kind === 'freezing'}
-              title={source.kind === 'live' ? undefined : 'Connect a source first — calibration needs a frame.'}
+              aria-label={`Re-calibrate ${active.name}`}
+              title={
+                source.kind === 'live'
+                  ? 'Re-calibrate'
+                  : 'Connect a source first — calibration needs a frame.'
+              }
               onClick={() => void openCalibration(active)}
             >
-              Re-calibrate
+              <Icon name="crosshair" />
             </button>
-            <button type="button" className="button" onClick={editableProfile.openRename}>
-              Rename
+            <button
+              type="button"
+              className="button"
+              aria-label={`Rename ${active.name}`}
+              title="Rename"
+              onClick={editableProfile.openRename}
+            >
+              <Icon name="pencil" />
             </button>
-            <button type="button" className="button" onClick={editableProfile.openDelete}>
-              Delete
+            <button
+              type="button"
+              className="button"
+              aria-label={`Delete ${active.name}`}
+              title="Delete"
+              onClick={editableProfile.openDelete}
+            >
+              <Icon name="trash" />
             </button>
           </>
         )}
@@ -471,8 +491,14 @@ function RecorderBindingRow({
           <span className="capture-bar__note hint-text" role="status">
             Press the button to bind…
           </span>
-          <button type="button" className="button" onClick={onCancelListen}>
-            Cancel
+          <button
+            type="button"
+            className="button"
+            aria-label="Cancel"
+            title="Cancel"
+            onClick={onCancelListen}
+          >
+            <Icon name="close" />
           </button>
         </>
       ) : (
@@ -485,9 +511,11 @@ function RecorderBindingRow({
               type="button"
               className="button"
               disabled={disabled}
+              aria-label={`Clear the ${ACTION_LABELS[action]} binding`}
+              title="Clear this binding"
               onClick={() => dispatch({ kind: 'recorder-binding/cleared', action })}
             >
-              Clear
+              <Icon name="close" />
             </button>
           )}
         </>

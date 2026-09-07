@@ -30,6 +30,7 @@ import type { ImportState } from './use-media-import.ts'
 import { importingLabel, useMediaImport } from './use-media-import.ts'
 import type { CaptureApi } from './use-capture.ts'
 import { CAPTURE_SHORTCUT, useCapture } from './use-capture.ts'
+import { Icon } from '../app/Icon.tsx'
 import './DialoguePanel.css'
 
 // Rendering this at all *is* "open" — the parent owns the selection, so closing on deselect
@@ -165,8 +166,14 @@ export function DialoguePanel({
       <>
         <header className="dialogue-panel__header">
           <h2 className="panel-title">Dialogue</h2>
-          <button type="button" className="button" onClick={onClose}>
-            Close
+          <button
+            type="button"
+            className="button"
+            aria-label="Close"
+            title="Close"
+            onClick={onClose}
+          >
+            <Icon name="close" />
           </button>
         </header>
         <p className="dialogue-panel__map hint-text">on {map === null ? 'an unknown map' : map.name}</p>
@@ -317,24 +324,30 @@ function DialogueMediaSection({
               type="button"
               className="button"
               disabled={currentIndex === 0}
+              aria-label="Move earlier"
+              title="Move earlier"
               onClick={() => moveMedium(currentMedium, currentIndex - 1)}
             >
-              Move earlier
+              <Icon name="chevron-left" />
             </button>
             <button
               type="button"
               className="button"
               disabled={currentIndex === dialogue.media.length - 1}
+              aria-label="Move later"
+              title="Move later"
               onClick={() => moveMedium(currentMedium, currentIndex + 1)}
             >
-              Move later
+              <Icon name="chevron-right" />
             </button>
             <button
               type="button"
               className="button"
+              aria-label="Remove this picture"
+              title="Remove"
               onClick={() => void removeMedium(currentMedium, currentIndex)}
             >
-              Remove
+              <Icon name="trash" />
             </button>
           </div>
         </>
@@ -471,8 +484,9 @@ function MergeIntoThisLine({
             setChosen('')
             dispatch({ kind: 'dialogue/merged', intoId: dialogue.id, fromId: target.id })
           }}
+          aria-label="Merge into this line"
         >
-          Merge into this line
+          <Icon name="merge" />
         </button>
       </div>
       <Disclosure>

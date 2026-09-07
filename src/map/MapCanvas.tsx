@@ -50,6 +50,7 @@ import type { Viewport } from './viewport.ts'
 import { fitRectToContainer, screenToWorld, visibleWorldRect, zoomAt } from './viewport.ts'
 import { normalizeDelta, wheelZoomFactor } from './wheel-zoom.ts'
 import { resizePolygon, zoneHandlePoints } from './zone-resize.ts'
+import { Icon } from '../app/Icon.tsx'
 import './MapCanvas.css'
 
 export type { MapDragPreview } from './use-map-drag.ts'
@@ -555,10 +556,11 @@ export function MapCanvas({
           <button
             type="button"
             className="map-canvas__reset button"
+            aria-label="Fit every map"
             title="Fit every map (F)"
             onClick={fitToMaps}
           >
-            Fit
+            <Icon name="maximize" />
           </button>
         </div>
       </div>

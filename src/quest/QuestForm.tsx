@@ -3,6 +3,7 @@ import { useId } from 'react'
 import { dispatch } from '../project/store.ts'
 import type { Quest } from '../project/types.ts'
 import { useFieldDraft } from '../use-field-draft.ts'
+import { Icon } from '../app/Icon.tsx'
 
 /**
  * Edits an existing quest's `name` and `note`. There is no Save button — the same contract
@@ -69,8 +70,8 @@ export function QuestForm({ quest, onDone }: { quest: Quest; onDone: () => void 
       </div>
 
       {/* Submit only closes the editor — leaving it flushes what is still in the fields. */}
-      <button type="submit" className="button">
-        Done
+      <button type="submit" className="button" aria-label="Done" title="Done">
+        <Icon name="check" />
       </button>
     </form>
   )

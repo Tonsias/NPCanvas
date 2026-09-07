@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactElement } from 'react'
+import { Icon } from './Icon.tsx'
 
 /**
  * Colour, the third row mode beside `EditableRowRenameForm` and `EditableRowDeleteConfirm` (see
@@ -36,8 +37,8 @@ export function HuePalette({
           onClick={() => onSelect(hue)}
         />
       ))}
-      <button type="button" className="button" onClick={onCancel}>
-        Cancel
+      <button type="button" className="button" aria-label="Cancel" title="Cancel" onClick={onCancel}>
+        <Icon name="close" />
       </button>
     </div>
   )

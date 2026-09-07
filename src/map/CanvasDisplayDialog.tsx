@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { useAlertDialogFocus } from '../dialog-focus.ts'
+import { Icon } from '../app/Icon.tsx'
 import './CanvasDisplayDialog.css'
 
 /**
@@ -91,8 +92,14 @@ export function CanvasDisplayDialog({
         </button>
 
         <footer className="panel-footer">
-          <button type="button" className="canvas-display-dialog__button button--primary" onClick={onClose}>
-            Done
+          <button
+            type="button"
+            className="canvas-display-dialog__button button--primary"
+            aria-label="Done"
+            title="Done"
+            onClick={onClose}
+          >
+            <Icon name="check" />
           </button>
         </footer>
       </div>

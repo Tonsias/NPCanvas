@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useState } from 'react'
+import { Icon } from './Icon.tsx'
 
 /**
  * A local-query search list with a close button and Escape handling — DialoguePicker and
@@ -68,8 +69,8 @@ export function SearchOverlay<T>({
           aria-label={ariaLabel}
           onChange={(event) => setQuery(event.target.value)}
         />
-        <button type="button" className="button" onClick={onClose}>
-          Close
+        <button type="button" className="button" aria-label="Close" title="Close (Esc)" onClick={onClose}>
+          <Icon name="close" />
         </button>
       </div>
 

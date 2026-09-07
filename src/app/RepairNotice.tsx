@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import type { ProjectRepairs } from '../project/types.ts'
+import { Icon } from './Icon.tsx'
 import './app.css'
 
 type RepairedProject = Extract<ProjectRepairs, { kind: 'repaired' }>
@@ -33,7 +34,7 @@ export function RepairNotice({
         onClick={onDismiss}
         aria-label="Dismiss this notice"
       >
-        ×
+        <Icon name="close" />
       </button>
     </div>
   )

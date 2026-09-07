@@ -3,6 +3,7 @@ import { Disclosure } from '../app/Disclosure.tsx'
 import { EditableRowDeleteConfirm } from '../app/EditableRow.tsx'
 import { useEditableRow } from '../app/use-editable-row.ts'
 import { useHeldFrames } from './capture-watch.ts'
+import { Icon } from '../app/Icon.tsx'
 import './HeldNote.css'
 
 // Shown whether or not the watcher is still running — the queue outlives it. Lives in
@@ -64,10 +65,11 @@ export function HeldNote({
               type="button"
               className="button"
               disabled={discardDisabled}
+              aria-label="Discard them"
               title="Throw the waiting boxes away. The captures they were read for keep whatever is already in them."
               onClick={editable.openDelete}
             >
-              Discard them
+              <Icon name="trash" />
             </button>
           </div>
         ))}

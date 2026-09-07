@@ -17,6 +17,7 @@ import { usePlayhead } from './use-playhead.ts'
 import { questArcs } from './quest-arcs.ts'
 import { buildReel } from './reel.ts'
 import { journeyTally } from './tally.ts'
+import { Icon } from '../app/Icon.tsx'
 import './cinema.css'
 
 export function CinemaScreen({
@@ -261,25 +262,50 @@ function Transport({
 }): ReactElement {
   return (
     <div className="cinema__transport card">
-      <button type="button" className="button" onClick={() => dispatch({ kind: 'jump', to: 'start' })}>
-        ⏮
+      <button
+        type="button"
+        className="button"
+        aria-label="Jump to the first line"
+        title="First line"
+        onClick={() => dispatch({ kind: 'jump', to: 'start' })}
+      >
+        <Icon name="skip-back" />
       </button>
-      <button type="button" className="button" onClick={() => dispatch({ kind: 'step', by: -1 })}>
-        ◀
+      <button
+        type="button"
+        className="button"
+        aria-label="Previous line"
+        title="Previous line"
+        onClick={() => dispatch({ kind: 'step', by: -1 })}
+      >
+        <Icon name="chevron-left" />
       </button>
       <button
         type="button"
         className="button"
         aria-label={playhead.playing ? 'Pause' : 'Play'}
+        title={playhead.playing ? 'Pause' : 'Play'}
         onClick={() => dispatch(playhead.playing ? { kind: 'pause' } : { kind: 'play' })}
       >
-        {playhead.playing ? '⏸' : '▶'}
+        <Icon name={playhead.playing ? 'pause' : 'play'} />
       </button>
-      <button type="button" className="button" onClick={() => dispatch({ kind: 'step', by: 1 })}>
-        ▶
+      <button
+        type="button"
+        className="button"
+        aria-label="Next line"
+        title="Next line"
+        onClick={() => dispatch({ kind: 'step', by: 1 })}
+      >
+        <Icon name="chevron-right" />
       </button>
-      <button type="button" className="button" onClick={() => dispatch({ kind: 'jump', to: 'end' })}>
-        ⏭
+      <button
+        type="button"
+        className="button"
+        aria-label="Jump to the last line"
+        title="Last line"
+        onClick={() => dispatch({ kind: 'jump', to: 'end' })}
+      >
+        <Icon name="skip-forward" />
       </button>
       <label className="cinema__speed">
         <span className="cinema__speed-value">×{playhead.speed.toFixed(2)}</span>

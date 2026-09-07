@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react'
 import { useAlertDialogFocus } from '../dialog-focus.ts'
 import { useFieldDraft } from '../use-field-draft.ts'
+import { Icon } from './Icon.tsx'
 import './app.css'
 
 // The rename + delete-confirm interaction every list in this app shares — see use-editable-row.ts
@@ -55,8 +56,8 @@ export function EditableRowRenameForm({
           close()
         }}
       />
-      <button type="submit" className="button">
-        {saveLabel}
+      <button type="submit" className="button" aria-label={saveLabel} title={saveLabel}>
+        <Icon name="check" />
       </button>
     </form>
   )
