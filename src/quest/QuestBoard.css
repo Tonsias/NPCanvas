@@ -63,16 +63,24 @@
   font-size: var(--text-xs);
 }
 
-/* A column, never a wrapping grid: side by side, every card in a row is as tall as the longest
-   quest in it, and a thread of prose plus its dialogue list is exactly what varies most in
-   height. Collapsing a card is what keeps the column short. */
+/* Multi-column, not a grid and not a wrapping flex row — in both of those a row is as tall as
+   the longest quest in it, and a thread of prose plus its dialogue list is exactly what varies
+   most in height. Here each card takes only its own height and the next one packs straight
+   underneath. `columns: 22rem` is a *width*, so the count follows the board on its own and
+   needs no breakpoint; the order it reads in is down a column, then across. */
 .quest-board__list {
   margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  columns: 22rem;
+  column-gap: var(--space-3);
+}
+
+/* A column box is not a flex container, so the gap between stacked cards is a margin; the card
+   must also never be split across a column break. */
+.quest-board__list > li {
+  break-inside: avoid;
+  margin-bottom: var(--space-3);
 }
 
 /* ---- card ---- */
@@ -216,3 +224,11 @@
   resize: vertical;
 }
 
+/* --breakpoint-wide (index.css). A card is prose plus a list, not a paragraph — see
+   `.quest-card__note`'s own cap above — so past the reading column the board widens into more
+   columns rather than one wider one. */
+@media (min-width: 92rem) {
+  .quest-board {
+    max-width: 92rem;
+  }
+}
