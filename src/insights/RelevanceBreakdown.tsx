@@ -21,7 +21,7 @@ type BreakdownRow = {
   target: RowTarget
 }
 
-const NPC_LIMIT = 15
+const ROW_LIMIT = 15
 
 // Both charts read the filtered dialogues, so clicking a segment drills down rather than
 // showing a chart of something the rest of the screen isn't looking at.
@@ -74,6 +74,7 @@ export function RelevanceBreakdown({
         <BreakdownChart
           idPrefix="zone"
           title="By zone"
+          noun="zones"
           rows={byZone}
           tags={relevanceTags}
           onSelect={select}
@@ -81,6 +82,7 @@ export function RelevanceBreakdown({
         <BreakdownChart
           idPrefix="npc"
           title="By NPC"
+          noun="NPCs"
           rows={byNpc}
           tags={relevanceTags}
           onSelect={select}
@@ -103,21 +105,29 @@ const LABEL_MIN_SEGMENT = 24
 function BreakdownChart({
   idPrefix,
   title,
+  noun,
   rows,
   tags,
   onSelect,
 }: {
   idPrefix: string
   title: string
+  noun: string
   rows: readonly BreakdownRow[]
   tags: readonly RelevanceTag[]
   onSelect: (target: RowTarget, segment: SegmentKey) => void
 }): ReactElement {
   const [svgRef, width] = useChartWidth<SVGSVGElement>(DEFAULT_WIDTH)
-  const height = Math.max(rows.length * ROW_PITCH, ROW_PITCH)
+  const [expanded, setExpanded] = useState(false)
+  const overflows = rows.length > ROW_LIMIT + 1
+  const drawn = useMemo(
+    () => (expanded || !overflows ? rows : foldOverflow(rows, tags, noun)),
+    [expanded, overflows, rows, tags, noun],
+  )
+  const height = Math.max(drawn.length * ROW_PITCH, ROW_PITCH)
   const barWidth = Math.max(width - BAR_X - TOTAL_WIDTH - GAP, 0)
   // Scale is the largest row, never a fixed ceiling, so a single row still fills the bar.
-  const widest = rows.reduce((max, row) => Math.max(max, totalOf(row.counts)), 0)
+  const widest = drawn.reduce((max, row) => Math.max(max, totalOf(row.counts)), 0)
   const keys = useMemo(() => segmentKeys(tags), [tags])
   const labels = useMemo(() => segmentLabel(tags), [tags])
   const colors = useMemo(() => segmentColor(tags), [tags])
@@ -136,7 +146,7 @@ function BreakdownChart({
           aria-label={title}
         >
           <SegmentDefs idPrefix={idPrefix} tags={tags} />
-          {rows.map((row, index) => (
+          {drawn.map((row, index) => (
             <BreakdownBar
               key={row.key}
               idPrefix={idPrefix}
@@ -153,8 +163,57 @@ function BreakdownChart({
           ))}
         </svg>
       )}
+      {overflows && (
+        <button
+          type="button"
+          className="insights__expand-rows disclosure-summary"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((open) => !open)}
+        >
+          {expanded ? `Fold back to the top ${ROW_LIMIT}` : `Show all ${rows.length} ${noun}`}
+        </button>
+      )}
     </figure>
   )
+}
+
+// The folded row stays clickable, so "Other" filters to exactly the rows it stands for.
+function foldOverflow(
+  rows: readonly BreakdownRow[],
+  tags: readonly RelevanceTag[],
+  noun: string,
+): BreakdownRow[] {
+  const tail = rows.slice(ROW_LIMIT)
+  const merged = emptyTally(tags)
+  for (const row of tail) {
+    merged.dialogues += row.dialogues
+    for (const [segment, count] of row.counts) {
+      merged.counts.set(segment, (merged.counts.get(segment) ?? 0) + count)
+    }
+  }
+  return [
+    ...rows.slice(0, ROW_LIMIT),
+    {
+      key: 'overflow',
+      label: `Other (${tail.length} ${noun})`,
+      dialogues: merged.dialogues,
+      counts: merged.counts,
+      target: mergedTarget(tail),
+    },
+  ]
+}
+
+function mergedTarget(rows: readonly BreakdownRow[]): RowTarget {
+  if (rows[0]?.target.kind === 'npcs') {
+    return {
+      kind: 'npcs',
+      npcKeys: rows.flatMap((row) => (row.target.kind === 'npcs' ? row.target.npcKeys : [])),
+    }
+  }
+  return {
+    kind: 'zones',
+    zones: rows.flatMap((row) => (row.target.kind === 'zones' ? row.target.zones : [])),
+  }
 }
 
 function BreakdownBar({
@@ -321,7 +380,7 @@ function zoneRows(
   return sortByDialogues(rows)
 }
 
-// NPCs by line count, with everything past NPC_LIMIT folded into one clickable "Other".
+// Every NPC by line count; the chart folds the tail past ROW_LIMIT.
 function npcRows(dialogues: readonly Dialogue[], relevanceTags: readonly RelevanceTag[]): BreakdownRow[] {
   const byNpc = new Map<string, Tally>()
   for (const dialogue of dialogues) {
@@ -331,7 +390,7 @@ function npcRows(dialogues: readonly Dialogue[], relevanceTags: readonly Relevan
     byNpc.set(key, bucket)
   }
 
-  const rows = sortByDialogues(
+  return sortByDialogues(
     [...byNpc].map(([key, bucket]) => ({
       key: `npc:${key}`,
       label: npcLabel(key),
@@ -340,29 +399,6 @@ function npcRows(dialogues: readonly Dialogue[], relevanceTags: readonly Relevan
       target: { kind: 'npcs', npcKeys: [key] } as const,
     })),
   )
-  if (rows.length <= NPC_LIMIT + 1) return rows
-
-  const head = rows.slice(0, NPC_LIMIT)
-  const tail = rows.slice(NPC_LIMIT)
-  const merged = emptyTally(relevanceTags)
-  for (const row of tail) {
-    merged.dialogues += row.dialogues
-    for (const [segment, count] of row.counts) {
-      merged.counts.set(segment, (merged.counts.get(segment) ?? 0) + count)
-    }
-  }
-  head.push({
-    key: 'npc-other',
-    label: `Other (${tail.length} NPCs)`,
-    dialogues: merged.dialogues,
-    counts: merged.counts,
-    target: { kind: 'npcs', npcKeys: tail.flatMap((row) => npcKeysOf(row.target)) },
-  })
-  return head
-}
-
-function npcKeysOf(target: RowTarget): readonly string[] {
-  return target.kind === 'npcs' ? target.npcKeys : []
 }
 
 function sortByDialogues(rows: BreakdownRow[]): BreakdownRow[] {

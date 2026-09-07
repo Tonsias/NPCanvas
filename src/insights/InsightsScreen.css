@@ -205,6 +205,21 @@
   height: auto;
 }
 
+/* Sits under its own chart, not the pair, so each axis folds independently. */
+.insights__expand-rows {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-2xs);
+}
+
+.insights__expand-rows:hover {
+  color: var(--text);
+}
+
 .insights__track {
   fill: var(--surface-2);
 }
