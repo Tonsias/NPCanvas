@@ -98,6 +98,33 @@
 
 /* `.quest-card__header` (index.css) supplies the layout. */
 
+/* The one place `.row-actions` (app.css) is lifted out of the flow: everywhere else it hands its
+   width back to the row's name, but here that reflows a collapsed card's header — and one card
+   changing height repacks every column of the board under the cursor. Absolute, so hovering
+   costs no layout at all; `pointer-events` then has to stand in for the `max-width: 0` clip that
+   normally keeps the hidden verbs unclickable. The shadow fades the name out from under them
+   rather than letting two strings overlap. */
+.quest-card__header {
+  position: relative;
+}
+
+.quest-card__header > .row-actions {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  max-width: none;
+  gap: var(--space-1);
+  pointer-events: none;
+  background: var(--surface-1);
+  box-shadow: -1.5rem 0 1rem -0.5rem var(--surface-1);
+}
+
+.quest-card__header:hover > .row-actions,
+.quest-card__header:focus-within > .row-actions {
+  pointer-events: auto;
+}
+
 /* Takes the leftover width so the verbs stay narrow and right-aligned. */
 .quest-card__name {
   flex: 1;

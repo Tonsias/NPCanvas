@@ -61,9 +61,10 @@ export type QuestsViewState = {
   /** Whether each status section is expanded — an uncontrolled `<details>` would spring back
    * open on every view switch. */
   sectionsOpen: Record<QuestStatus, boolean>
-  /** The cards collapsed to their header. Collapsed ids rather than expanded ones, so a quest
-   * created later starts open without anything having to add it here. */
-  collapsed: readonly QuestId[]
+  /** The cards opened past their header. A board of headers is the view worth landing on, so
+   * the empty default collapses every card and only a deep link (`?edit=<id>` from the canvas)
+   * or a deliberate click adds one. */
+  expanded: readonly QuestId[]
 }
 
 export const INITIAL_VIEW_STATE: ViewState = {
@@ -79,5 +80,5 @@ export const INITIAL_VIEW_STATE: ViewState = {
   },
   cinema: { playheadIndex: 0, questRailWidth: null, railWidth: null },
   insights: { filter: EMPTY_FILTER, dossierKey: null, timelineActive: null, timelineUnit: null },
-  quests: { mode: { kind: 'idle' }, sectionsOpen: { open: true, done: false }, collapsed: [] },
+  quests: { mode: { kind: 'idle' }, sectionsOpen: { open: true, done: false }, expanded: [] },
 }

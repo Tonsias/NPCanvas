@@ -58,7 +58,7 @@ export function QuestBoard({
   viewState: QuestsViewState
   onViewStateChange: (update: (prev: QuestsViewState) => QuestsViewState) => void
 }): ReactElement {
-  const { mode, sectionsOpen, collapsed } = viewState
+  const { mode, sectionsOpen, expanded } = viewState
   const setMode = useCallback(
     (mode: QuestBoardMode): void => onViewStateChange((prev) => ({ ...prev, mode })),
     [onViewStateChange],
@@ -71,13 +71,13 @@ export function QuestBoard({
       })),
     [onViewStateChange],
   )
-  const toggleCollapsed = useCallback(
+  const toggleExpanded = useCallback(
     (questId: QuestId): void =>
       onViewStateChange((prev) => ({
         ...prev,
-        collapsed: prev.collapsed.includes(questId)
-          ? prev.collapsed.filter((id) => id !== questId)
-          : [...prev.collapsed, questId],
+        expanded: prev.expanded.includes(questId)
+          ? prev.expanded.filter((id) => id !== questId)
+          : [...prev.expanded, questId],
       })),
     [onViewStateChange],
   )
@@ -95,7 +95,9 @@ export function QuestBoard({
       ...prev,
       mode: { kind: 'editing', id: editQuestId },
       sectionsOpen: { ...prev.sectionsOpen, [target.status]: true },
-      collapsed: prev.collapsed.filter((id) => id !== editQuestId),
+      expanded: prev.expanded.includes(editQuestId)
+        ? prev.expanded
+        : [...prev.expanded, editQuestId],
     }))
     // A card inside a closed `<details>` cannot be scrolled to, so wait for the frame that
     // opens its section.
@@ -153,8 +155,8 @@ export function QuestBoard({
             onSetMode={setMode}
             open={sectionsOpen[status]}
             onSetOpen={setSectionOpen}
-            collapsed={collapsed}
-            onToggleCollapsed={toggleCollapsed}
+            expanded={expanded}
+            onToggleExpanded={toggleExpanded}
           />
         ))
       )}
@@ -177,8 +179,8 @@ function QuestGroup({
   onSetMode,
   open,
   onSetOpen,
-  collapsed,
-  onToggleCollapsed,
+  expanded,
+  onToggleExpanded,
   ...data
 }: BoardData & {
   status: QuestStatus
@@ -187,8 +189,8 @@ function QuestGroup({
   onSetMode: (mode: QuestBoardMode) => void
   open: boolean
   onSetOpen: (status: QuestStatus, open: boolean) => void
-  collapsed: readonly QuestId[]
-  onToggleCollapsed: (questId: QuestId) => void
+  expanded: readonly QuestId[]
+  onToggleExpanded: (questId: QuestId) => void
 }): ReactElement {
   return (
     <details
@@ -217,8 +219,8 @@ function QuestGroup({
                 quest={quest}
                 mode={'id' in mode && mode.id === quest.id ? mode : { kind: 'idle' }}
                 onSetMode={onSetMode}
-                collapsed={collapsed.includes(quest.id)}
-                onToggleCollapsed={onToggleCollapsed}
+                expanded={expanded.includes(quest.id)}
+                onToggleExpanded={onToggleExpanded}
                 {...data}
               />
             </li>
@@ -233,8 +235,8 @@ function QuestCard({
   quest,
   mode,
   onSetMode,
-  collapsed,
-  onToggleCollapsed,
+  expanded,
+  onToggleExpanded,
   dialogues,
   dialoguesById,
   zonesById,
@@ -243,8 +245,8 @@ function QuestCard({
   quest: Quest
   mode: QuestBoardMode
   onSetMode: (mode: QuestBoardMode) => void
-  collapsed: boolean
-  onToggleCollapsed: (questId: QuestId) => void
+  expanded: boolean
+  onToggleExpanded: (questId: QuestId) => void
 }): ReactElement {
   // Delete is EditableRow's own local state; the other modes stay lifted into QuestsViewState
   // because ?edit=<id> must reach them from outside the card.
@@ -264,7 +266,7 @@ function QuestCard({
   const bodyId = `${questCardElementId(quest.id)}-body`
   // An open editor or delete confirmation outranks the collapse, so a verb pressed on a
   // collapsed card can never act on something nobody can see.
-  const bodyOpen = !collapsed || mode.kind !== 'idle' || editable.mode === 'delete'
+  const bodyOpen = expanded || mode.kind !== 'idle' || editable.mode === 'delete'
 
   return (
     <article
@@ -281,7 +283,7 @@ function QuestCard({
             className="quest-card__toggle"
             aria-expanded={bodyOpen}
             aria-controls={bodyId}
-            onClick={() => onToggleCollapsed(quest.id)}
+            onClick={() => onToggleExpanded(quest.id)}
           >
             <span className="quest-chevron" aria-hidden="true">
               ▸
