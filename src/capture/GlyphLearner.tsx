@@ -123,6 +123,13 @@ export function GlyphLearner({
           )}
           <button
             type="button"
+            className="glyph-learner__button button"
+            onClick={() => onConfirm(tiles.map((tile) => ({ char: '', bits: tile.bits })))}
+          >
+            Nothing is text
+          </button>
+          <button
+            type="button"
             className="glyph-learner__button button button--primary-flat"
             disabled={!complete}
             onClick={() =>
