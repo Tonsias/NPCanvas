@@ -2,7 +2,7 @@ import { EMPTY_FILTER } from '../insights/filters.ts'
 import type { DialogueFilter } from '../insights/filters.ts'
 import type { BucketUnit } from '../insights/timeline-buckets.ts'
 import type { Viewport } from '../map/viewport.ts'
-import type { CanvasTool } from '../project/types.ts'
+import type { CanvasTool, QuestId, QuestStatus } from '../project/types.ts'
 import type { QuestBoardMode } from '../quest/QuestBoard.tsx'
 
 /**
@@ -58,6 +58,12 @@ export type InsightsViewState = {
 
 export type QuestsViewState = {
   mode: QuestBoardMode
+  /** Whether each status section is expanded — an uncontrolled `<details>` would spring back
+   * open on every view switch. */
+  sectionsOpen: Record<QuestStatus, boolean>
+  /** The cards collapsed to their header. Collapsed ids rather than expanded ones, so a quest
+   * created later starts open without anything having to add it here. */
+  collapsed: readonly QuestId[]
 }
 
 export const INITIAL_VIEW_STATE: ViewState = {
@@ -73,5 +79,5 @@ export const INITIAL_VIEW_STATE: ViewState = {
   },
   cinema: { playheadIndex: 0, questRailWidth: null, railWidth: null },
   insights: { filter: EMPTY_FILTER, dossierKey: null, timelineActive: null, timelineUnit: null },
-  quests: { mode: { kind: 'idle' } },
+  quests: { mode: { kind: 'idle' }, sectionsOpen: { open: true, done: false }, collapsed: [] },
 }

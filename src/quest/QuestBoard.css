@@ -29,22 +29,45 @@
   color: var(--text-muted);
 }
 
-.quest-board__group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+/* Left as a `<details>`' default display: a non-block `display` on the element itself is what
+   historically stopped Chromium hiding the closed content, so the gap below the summary is a
+   margin on the one body element instead. */
+.quest-board__group-summary {
+  color: var(--text-muted);
+}
+
+.quest-board__group-summary:hover {
+  color: var(--text);
 }
 
 /* `.micro-label` and `.quest-board__group-heading` (index.css) supply the treatment and the
    layout. */
 
+/* One glyph for both collapse affordances — a status section and a card — so the two read as
+   the same control. #96 scopes transitions to colour, opacity and transform; this is a
+   transform. */
+.quest-chevron {
+  display: inline-block;
+  color: var(--text-muted);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.quest-board__group[open] > .quest-board__group-summary .quest-chevron,
+.quest-card__toggle[aria-expanded='true'] .quest-chevron {
+  transform: rotate(90deg);
+}
+
 /* `.hint-text` (index.css) supplies the margin/colour; the size is a step up. */
 .quest-board__group-empty {
+  margin-top: var(--space-3);
   font-size: var(--text-xs);
 }
 
+/* A column, never a wrapping grid: side by side, every card in a row is as tall as the longest
+   quest in it, and a thread of prose plus its dialogue list is exactly what varies most in
+   height. Collapsing a card is what keeps the column short. */
 .quest-board__list {
-  margin: 0;
+  margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
   display: flex;
@@ -73,13 +96,51 @@
   min-width: 8rem;
   margin: 0;
   font-size: var(--text-lg);
+}
+
+/* The name is the collapse control — the card's other verbs already live in `.row-actions`, so
+   a separate chevron button would add a second thing to aim at for the same result. */
+.quest-card__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.quest-card__toggle:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-1);
+}
+
+.quest-card__toggle-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.quest-card[data-status='done'] .quest-card__name {
+.quest-card[data-status='done'] .quest-card__toggle-label {
   text-decoration: line-through;
+}
+
+/* `hidden`'s UA `display: none` loses to this rule's own `display`, so the collapsed state has
+   to be spelled out. */
+.quest-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.quest-card__body[hidden] {
+  display: none;
 }
 
 /* `.hint-text` (index.css) supplies the rest — the redundant `margin: 0` is harmless on a
@@ -155,18 +216,3 @@
   resize: vertical;
 }
 
-/* --breakpoint-wide (index.css). A card is prose plus a list, not a paragraph — see
-   `.quest-card__note`'s own cap above — so the board grows into a grid instead of one wider
-   column. `auto-fill` rather than `auto-fit`: an odd card count then leaves a gap on the last
-   row instead of stretching the final card to fill it. */
-@media (min-width: 92rem) {
-  .quest-board {
-    max-width: 92rem;
-  }
-
-  .quest-board__list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
-    align-items: start;
-  }
-}

@@ -56,7 +56,8 @@ function ReadyScreen({ state }: { state: ReadyState }): ReactElement {
     [],
   )
   const onQuestsStateChange = useCallback(
-    (quests: QuestsViewState) => setViewState((prev) => ({ ...prev, quests })),
+    (update: (prev: QuestsViewState) => QuestsViewState) =>
+      setViewState((prev) => ({ ...prev, quests: update(prev.quests) })),
     [],
   )
   const onCinemaStateChange = useCallback(
@@ -116,7 +117,7 @@ function ReadyView({
   onCanvasStateChange: (update: (prev: CanvasViewState) => CanvasViewState) => void
   onCinemaStateChange: (cinema: CinemaViewState) => void
   onInsightsStateChange: (insights: InsightsViewState) => void
-  onQuestsStateChange: (quests: QuestsViewState) => void
+  onQuestsStateChange: (update: (prev: QuestsViewState) => QuestsViewState) => void
 }): ReactElement {
   switch (route.kind) {
     case 'canvas':

@@ -56,11 +56,29 @@ export function QuestBoard({
   project: ProjectFile
   route: Extract<Route, { kind: 'quests' }>
   viewState: QuestsViewState
-  onViewStateChange: (viewState: QuestsViewState) => void
+  onViewStateChange: (update: (prev: QuestsViewState) => QuestsViewState) => void
 }): ReactElement {
-  const { mode } = viewState
+  const { mode, sectionsOpen, collapsed } = viewState
   const setMode = useCallback(
-    (mode: QuestBoardMode): void => onViewStateChange({ mode }),
+    (mode: QuestBoardMode): void => onViewStateChange((prev) => ({ ...prev, mode })),
+    [onViewStateChange],
+  )
+  const setSectionOpen = useCallback(
+    (status: QuestStatus, open: boolean): void =>
+      onViewStateChange((prev) => ({
+        ...prev,
+        sectionsOpen: { ...prev.sectionsOpen, [status]: open },
+      })),
+    [onViewStateChange],
+  )
+  const toggleCollapsed = useCallback(
+    (questId: QuestId): void =>
+      onViewStateChange((prev) => ({
+        ...prev,
+        collapsed: prev.collapsed.includes(questId)
+          ? prev.collapsed.filter((id) => id !== questId)
+          : [...prev.collapsed, questId],
+      })),
     [onViewStateChange],
   )
 
@@ -71,11 +89,20 @@ export function QuestBoard({
   useEffect(() => {
     if (editQuestId === null) return
     navigate({ kind: 'quests', editQuestId: null }, { replace: true })
-    if (quests.some((quest) => quest.id === editQuestId)) {
-      setMode({ kind: 'editing', id: editQuestId })
+    const target = quests.find((quest) => quest.id === editQuestId)
+    if (target === undefined) return
+    onViewStateChange((prev) => ({
+      ...prev,
+      mode: { kind: 'editing', id: editQuestId },
+      sectionsOpen: { ...prev.sectionsOpen, [target.status]: true },
+      collapsed: prev.collapsed.filter((id) => id !== editQuestId),
+    }))
+    // A card inside a closed `<details>` cannot be scrolled to, so wait for the frame that
+    // opens its section.
+    requestAnimationFrame(() => {
       document.getElementById(questCardElementId(editQuestId))?.scrollIntoView({ block: 'center' })
-    }
-  }, [editQuestId, quests, setMode])
+    })
+  }, [editQuestId, quests, onViewStateChange])
 
   // Resolved once per document change, not once per linked row.
   const dialoguesById = useMemo(() => byId(project.dialogues), [project.dialogues])
@@ -124,6 +151,10 @@ export function QuestBoard({
             zoneIndex={zoneIndex}
             mode={mode}
             onSetMode={setMode}
+            open={sectionsOpen[status]}
+            onSetOpen={setSectionOpen}
+            collapsed={collapsed}
+            onToggleCollapsed={toggleCollapsed}
           />
         ))
       )}
@@ -144,19 +175,38 @@ function QuestGroup({
   quests,
   mode,
   onSetMode,
+  open,
+  onSetOpen,
+  collapsed,
+  onToggleCollapsed,
   ...data
 }: BoardData & {
   status: QuestStatus
   quests: readonly Quest[]
   mode: QuestBoardMode
   onSetMode: (mode: QuestBoardMode) => void
+  open: boolean
+  onSetOpen: (status: QuestStatus, open: boolean) => void
+  collapsed: readonly QuestId[]
+  onToggleCollapsed: (questId: QuestId) => void
 }): ReactElement {
   return (
-    <section className="quest-board__group" aria-label={`${STATUS_LABEL[status]} quests`}>
-      <h2 className="quest-board__group-heading micro-label">
-        {STATUS_LABEL[status]}
-        <span className="count-pill">{quests.length}</span>
-      </h2>
+    <details
+      className="quest-board__group"
+      open={open}
+      // Read synchronously, not inside the updater — currentTarget reverts to null once the
+      // native event finishes dispatching, before a setState updater runs.
+      onToggle={(event) => onSetOpen(status, event.currentTarget.open)}
+    >
+      <summary className="quest-board__group-summary disclosure-summary">
+        <h2 className="quest-board__group-heading micro-label">
+          <span className="quest-chevron" aria-hidden="true">
+            ▸
+          </span>
+          {STATUS_LABEL[status]}
+          <span className="count-pill">{quests.length}</span>
+        </h2>
+      </summary>
       {quests.length === 0 ? (
         <p className="quest-board__group-empty hint-text">Nothing here.</p>
       ) : (
@@ -167,13 +217,15 @@ function QuestGroup({
                 quest={quest}
                 mode={'id' in mode && mode.id === quest.id ? mode : { kind: 'idle' }}
                 onSetMode={onSetMode}
+                collapsed={collapsed.includes(quest.id)}
+                onToggleCollapsed={onToggleCollapsed}
                 {...data}
               />
             </li>
           ))}
         </ul>
       )}
-    </section>
+    </details>
   )
 }
 
@@ -181,6 +233,8 @@ function QuestCard({
   quest,
   mode,
   onSetMode,
+  collapsed,
+  onToggleCollapsed,
   dialogues,
   dialoguesById,
   zonesById,
@@ -189,6 +243,8 @@ function QuestCard({
   quest: Quest
   mode: QuestBoardMode
   onSetMode: (mode: QuestBoardMode) => void
+  collapsed: boolean
+  onToggleCollapsed: (questId: QuestId) => void
 }): ReactElement {
   // Delete is EditableRow's own local state; the other modes stay lifted into QuestsViewState
   // because ?edit=<id> must reach them from outside the card.
@@ -205,6 +261,10 @@ function QuestCard({
   const toggle = STATUS_TOGGLE[quest.status]
   const name = questName(quest)
   const nameId = `${questCardElementId(quest.id)}-name`
+  const bodyId = `${questCardElementId(quest.id)}-body`
+  // An open editor or delete confirmation outranks the collapse, so a verb pressed on a
+  // collapsed card can never act on something nobody can see.
+  const bodyOpen = !collapsed || mode.kind !== 'idle' || editable.mode === 'delete'
 
   return (
     <article
@@ -216,7 +276,18 @@ function QuestCard({
     >
       <header className="quest-card__header row-actions-host">
         <h3 id={nameId} className="quest-card__name">
-          {name}
+          <button
+            type="button"
+            className="quest-card__toggle"
+            aria-expanded={bodyOpen}
+            aria-controls={bodyId}
+            onClick={() => onToggleCollapsed(quest.id)}
+          >
+            <span className="quest-chevron" aria-hidden="true">
+              ▸
+            </span>
+            <span className="quest-card__toggle-label">{name}</span>
+          </button>
         </h3>
         <span className="quest-card__linked-count hint-text">
           {quest.dialogueIds.length} {quest.dialogueIds.length === 1 ? 'dialogue' : 'dialogues'}
@@ -257,56 +328,61 @@ function QuestCard({
         </RowActions>
       </header>
 
-      {editable.mode === 'delete' ? (
-        <EditableRowDeleteConfirm
-          message="Delete this quest? Its dialogues stay exactly where they are."
-          onConfirm={() => dispatch({ kind: 'quest/deleted', questId: quest.id })}
-          close={editable.close}
-          className="quest-card__confirm"
-          label={`Delete ${name}?`}
-        />
-      ) : (
-        <QuestCardMode
-          quest={quest}
-          mode={mode}
-          onSetMode={onSetMode}
-          dialogues={dialogues}
-          zonesById={zonesById}
-          zoneIndex={zoneIndex}
-        />
-      )}
+      <div id={bodyId} className="quest-card__body" hidden={!bodyOpen}>
+        {editable.mode === 'delete' ? (
+          <EditableRowDeleteConfirm
+            message="Delete this quest? Its dialogues stay exactly where they are."
+            onConfirm={() => dispatch({ kind: 'quest/deleted', questId: quest.id })}
+            close={editable.close}
+            className="quest-card__confirm"
+            label={`Delete ${name}?`}
+          />
+        ) : (
+          <QuestCardMode
+            quest={quest}
+            mode={mode}
+            onSetMode={onSetMode}
+            dialogues={dialogues}
+            zonesById={zonesById}
+            zoneIndex={zoneIndex}
+          />
+        )}
 
-      {linked.length === 0 ? (
-        <p className="quest-card__empty hint-text">
-          Nothing attached yet. Use <strong>Attach dialogue</strong>, or start a quest from{' '}
-          <a href={formatRoute({ kind: 'canvas', dialogueId: null, focus: null })}>
-            the dialogue panel on the canvas
-          </a>
-          .
-        </p>
-      ) : (
-        <ol className="framed-list quest-card__dialogues">
-          {linked.map((dialogue) => (
-            <li key={dialogue.id} className="quest-card__dialogue">
-              <DialogueRow dialogue={dialogue} zones={resolveZones(dialogue.id, zoneIndex, zonesById)} />
-              <button
-                type="button"
-                className="button"
-                aria-label={`Detach ${npcLabel(npcKey(dialogue))}: ${dialogueSnippet(dialogue)} from ${name}`}
-                onClick={() =>
-                  dispatch({
-                    kind: 'quest/dialogue-detached',
-                    questId: quest.id,
-                    dialogueId: dialogue.id,
-                  })
-                }
-              >
-                Detach
-              </button>
-            </li>
-          ))}
-        </ol>
-      )}
+        {linked.length === 0 ? (
+          <p className="quest-card__empty hint-text">
+            Nothing attached yet. Use <strong>Attach dialogue</strong>, or start a quest from{' '}
+            <a href={formatRoute({ kind: 'canvas', dialogueId: null, focus: null })}>
+              the dialogue panel on the canvas
+            </a>
+            .
+          </p>
+        ) : (
+          <ol className="framed-list quest-card__dialogues">
+            {linked.map((dialogue) => (
+              <li key={dialogue.id} className="quest-card__dialogue">
+                <DialogueRow
+                  dialogue={dialogue}
+                  zones={resolveZones(dialogue.id, zoneIndex, zonesById)}
+                />
+                <button
+                  type="button"
+                  className="button"
+                  aria-label={`Detach ${npcLabel(npcKey(dialogue))}: ${dialogueSnippet(dialogue)} from ${name}`}
+                  onClick={() =>
+                    dispatch({
+                      kind: 'quest/dialogue-detached',
+                      questId: quest.id,
+                      dialogueId: dialogue.id,
+                    })
+                  }
+                >
+                  Detach
+                </button>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
     </article>
   )
 }
