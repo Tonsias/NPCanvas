@@ -120,8 +120,13 @@
   box-shadow: -1.5rem 0 1rem -0.5rem var(--surface-1);
 }
 
+/* Hence no `row-actions-host` on this header: the shared reveal's `:focus-within` half would
+   hold the verbs up after a click, because the name that toggles the card is itself a button
+   inside the host and keeps focus. `:focus-visible` is the same guarantee for a Tab-only pass
+   without the mouse triggering it. */
 .quest-card__header:hover > .row-actions,
-.quest-card__header:focus-within > .row-actions {
+.quest-card__header:has(:focus-visible) > .row-actions {
+  opacity: 1;
   pointer-events: auto;
 }
 

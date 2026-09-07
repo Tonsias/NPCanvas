@@ -276,7 +276,7 @@ function QuestCard({
       style={questAccentStyle(quest)}
       aria-labelledby={nameId}
     >
-      <header className="quest-card__header row-actions-host">
+      <header className="quest-card__header">
         <h3 id={nameId} className="quest-card__name">
           <button
             type="button"
