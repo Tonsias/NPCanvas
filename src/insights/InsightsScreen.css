@@ -403,7 +403,7 @@
 }
 
 .npc-dossier__name {
-  font-weight: 600;
+  font-family: var(--font-heading);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

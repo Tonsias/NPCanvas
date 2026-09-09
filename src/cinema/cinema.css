@@ -143,7 +143,7 @@
 .cinema-stage__speaker {
   margin: 0;
   align-self: center;
-  font-weight: 600;
+  font-family: var(--font-heading);
 }
 
 .cinema-stage__zone {
@@ -189,6 +189,7 @@
 
 .cinema__speed-value {
   display: inline-block;
+  font-family: var(--font-heading);
   min-width: 3.5em;
   font-variant-numeric: tabular-nums;
 }
@@ -304,8 +305,8 @@
 
 .cinema-quest-rail__name {
   margin: 0;
+  font-family: var(--font-heading);
   font-size: var(--text-md);
-  font-weight: 600;
   color: var(--text);
 }
 
@@ -383,7 +384,7 @@
 
 .cinema-ledger__stat dd {
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-heading);
   text-align: right;
 }
 

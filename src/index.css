@@ -237,6 +237,7 @@ body {
 
 .button {
   font: inherit;
+  font-family: var(--font-heading);
   font-size: var(--text-2xs);
   min-height: var(--control-height);
   color: var(--text-muted);
@@ -291,6 +292,7 @@ body {
 
 .button--primary {
   font: inherit;
+  font-family: var(--font-heading);
   font-size: var(--text-sm);
   min-height: var(--control-height);
   color: var(--accent-contrast);
@@ -341,6 +343,7 @@ body {
    an outset ring on a middle segment would be clipped by its neighbours. */
 .segmented-button {
   font: inherit;
+  font-family: var(--font-heading);
   color: var(--text);
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -563,9 +566,11 @@ body {
 }
 
 /* An `<h1>`-level screen title — insights, the quest board and settings all set one this size
-   with no margin, letting the bar around it own the spacing. */
+   with no margin, letting the bar around it own the spacing. Caprasimo carries one weight and no
+   italic, so nothing that reaches for `--font-heading` may also set `font-weight`/`font-style`. */
 .screen-title {
   margin: 0;
+  font-family: var(--font-heading);
   font-size: var(--text-2xl);
 }
 
@@ -573,6 +578,7 @@ body {
    overlay (calibration, the glyph learner, the glyph set) and the dialogue panel's own header. */
 .panel-title {
   margin: 0;
+  font-family: var(--font-heading);
   font-size: var(--text-md);
 }
 
@@ -632,6 +638,7 @@ body {
    `--text-4xl` with no margin. */
 .fatal-title {
   margin: 0;
+  font-family: var(--font-heading);
   font-size: var(--text-4xl);
 }
 
