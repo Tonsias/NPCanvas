@@ -42,7 +42,7 @@
 .glyph-set__char {
   flex: 1;
   min-width: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--text-md);
   overflow-wrap: anywhere;
 }

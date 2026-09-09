@@ -36,6 +36,17 @@
   gap: var(--space-3);
 }
 
+/* Answered "not text": sage, because the row is now describing what the tile is rather than
+   waiting for a letter to act on. */
+.glyph-learner__item[data-not-text] {
+  background: var(--accent-2-soft);
+  border-color: transparent;
+}
+
+.glyph-learner__item[data-not-text] .glyph-tile-frame {
+  fill: var(--accent-2);
+}
+
 /* `.glyph-tile-frame` (index.css) supplies the box; only the size differs. */
 .glyph-learner__tile {
   width: 3.5rem;
@@ -57,7 +68,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-2);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: var(--text-xs);
   white-space: pre-wrap;
 }
@@ -72,11 +83,16 @@
 
 /* `.text-input` (index.css) supplies the rest. */
 .glyph-learner__input {
-  width: 5rem;
+  width: 3.5rem;
   font-size: var(--text-md);
   text-align: center;
-  background: var(--surface-0);
   padding: var(--space-1) var(--space-2);
+}
+
+.glyph-learner__input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1.5px var(--accent);
 }
 
 .glyph-learner__input:disabled {

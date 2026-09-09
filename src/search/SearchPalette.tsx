@@ -1,5 +1,6 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactElement } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { Icon } from '../app/Icon.tsx'
 import { navigate } from '../app/route.ts'
 import { selectZone } from '../app/select.ts'
 import { assertNever } from '../assert-never.ts'
@@ -142,9 +143,11 @@ export function SearchPalette({
         aria-modal="true"
         aria-label="Search"
       >
-        <input
-          ref={inputRef}
-          className="search-palette__input"
+        <div className="search-palette__bar">
+          <Icon name="search" />
+          <input
+            ref={inputRef}
+            className="search-palette__input"
           type="search"
           value={query}
           placeholder="Search dialogues, NPCs, quests and zones"
@@ -158,8 +161,10 @@ export function SearchPalette({
             setQuery(event.target.value)
             setActiveIndex(0)
           }}
-          onKeyDown={onInputKeyDown}
-        />
+            onKeyDown={onInputKeyDown}
+          />
+          <kbd>Esc</kbd>
+        </div>
 
         {query.trim() === '' ? (
           <p className="search-palette__empty hint-text">Start typing to search the project.</p>
@@ -181,15 +186,23 @@ export function SearchPalette({
                 >
                   <span className="search-palette__kind micro-label">{KIND_LABEL[result.kind]}</span>
                   <ResultLabel result={result} />
+                  {index === activeIndex && (
+                    <kbd className="search-palette__enter" aria-hidden="true">
+                      ⏎
+                    </kbd>
+                  )}
                 </button>
               </li>
             ))}
           </ul>
         )}
 
-        {outcome.hiddenCount > 0 && (
-          <p className="search-palette__more hint-text">…and {outcome.hiddenCount} more. Narrow the search.</p>
-        )}
+        <p className="search-palette__foot hint-text">
+          <span>{outcome.hiddenCount > 0 ? `…and ${outcome.hiddenCount} more. Narrow the search.` : ''}</span>
+          <span>
+            <kbd>↑</kbd> <kbd>↓</kbd> to move · <kbd>⏎</kbd> to jump
+          </span>
+        </p>
       </div>
     </div>
   )

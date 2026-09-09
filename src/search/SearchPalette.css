@@ -1,3 +1,5 @@
+/* The ground at three quarters, not black: the palette floats over the app rather than hiding
+   it, and a neutral black scrim on a warm ground reads as a different app underneath. */
 .search-palette__backdrop {
   position: fixed;
   inset: 0;
@@ -6,13 +8,13 @@
   align-items: flex-start;
   justify-content: center;
   padding-top: 12vh;
-  background: rgb(0 0 0 / 0.5);
+  background: color-mix(in srgb, var(--surface-0) 72%, transparent);
 }
 
 .search-palette {
   display: flex;
   flex-direction: column;
-  width: min(560px, calc(100% - var(--space-6)));
+  width: min(660px, calc(100% - var(--space-6)));
   max-height: 70vh;
   background: var(--surface-1);
   border: 1px solid var(--border-strong);
@@ -21,18 +23,39 @@
   overflow: hidden;
 }
 
+/* The glyph, the query and the way out, on one line — the palette's own header. */
+.search-palette__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.search-palette__bar .icon {
+  flex: none;
+  color: var(--accent);
+}
+
 .search-palette__input {
+  flex: 1;
+  min-width: 0;
   font: inherit;
-  font-size: 0.9375rem;
+  font-size: var(--text-lg);
   color: var(--text);
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--border);
-  padding: var(--space-3) var(--space-4);
+  padding: 0;
 }
 
 .search-palette__input:focus-visible {
   outline: none;
+}
+
+/* Chromium draws a clear button on a search input; beside the Esc cap it reads as a second way
+   out rather than as a way to empty the field. */
+.search-palette__input::-webkit-search-cancel-button {
+  display: none;
 }
 
 /* `.hint-text` (index.css) supplies the margin/colour; the size is a step up. */
@@ -64,15 +87,24 @@
 }
 
 .search-palette__result[data-active='true'] {
-  background: var(--surface-3);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 
-/* `.micro-label` (index.css) supplies the uppercase treatment; only the tighter tracking and
-   the fixed column width differ here. */
+/* Marks the row Enter would take, on the row itself — the footer says what the key does, this
+   says where it would land. */
+.search-palette__enter {
+  margin-left: auto;
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+/* `.micro-label` (index.css) supplies the uppercase treatment; the fixed column is what lets the
+   eye read straight down the kinds rather than re-finding them per row. */
 .search-palette__kind {
   flex: none;
-  letter-spacing: 0.06em;
-  width: 4.5rem;
+  width: 4.125rem;
 }
 
 .search-palette__label {
@@ -96,8 +128,14 @@
   white-space: nowrap;
 }
 
-/* `.hint-text` (index.css) supplies the margin/size/colour. */
-.search-palette__more {
+/* `.hint-text` (index.css) supplies the size/colour. The overflow count on the left, the keys on
+   the right — the row is always there, so the list never shifts when the count appears. */
+.search-palette__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
   padding: var(--space-2) var(--space-4);
-  border-top: 1px solid var(--border);
+  background: var(--surface-well);
 }

@@ -73,7 +73,11 @@ export function GlyphLearner({
 
         <ol className="glyph-learner__list">
           {tiles.map((tile, index) => (
-            <li key={tile.bits} className="glyph-learner__item glyph-row">
+            <li
+              key={tile.bits}
+              className="glyph-learner__item glyph-row"
+              data-not-text={entries[index].notText ? 'true' : undefined}
+            >
               <GlyphTile bits={tile.bits} className="glyph-learner__tile glyph-tile-frame" label="Unrecognised tile" />
               <div className="glyph-learner__fields">
                 <p className="glyph-learner__context">
