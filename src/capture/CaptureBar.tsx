@@ -326,39 +326,45 @@ export function CaptureBar({
 
   return (
     <section className="capture-bar panel" aria-label="Screen capture">
-      <h3 className="micro-label">Capture source</h3>
-      <div className="capture-bar__row">{connectionRow()}</div>
-      <Disclosure>
-        <p className="capture-bar__hint hint-text">
-          A capture connection cannot be stored the way the project folder can, so it ends with
-          the page — after a reload, connect once more.
-        </p>
-      </Disclosure>
-      {cancelled && (
-        <p className="capture-bar__note hint-text" role="status">
-          Cancelled. Nothing is being captured.
-        </p>
-      )}
-      {source.kind === 'failed' && (
-        <p className="capture-bar__error hint-text" role="alert">
-          {source.message}
-        </p>
-      )}
-
-      <h3 className="micro-label">Capture profile</h3>
-      <div className="capture-bar__row capture-bar__row--actions">{profileRow()}</div>
-      {profiles.length === 0 && (
+      <div className="capture-bar__section">
+  <h3 className="micro-label">Capture source</h3>
+        <div className="capture-bar__row">{connectionRow()}</div>
         <Disclosure>
           <p className="capture-bar__hint hint-text">
-            A profile outlines the console screen inside the captured frame and the text box
-            inside that. Drawn once, every capture afterwards is a single click.
+            A capture connection cannot be stored the way the project folder can, so it ends with
+            the page — after a reload, connect once more.
           </p>
         </Disclosure>
-      )}
-      <MismatchWarning source={source} profile={active} />
+        {cancelled && (
+          <p className="capture-bar__note hint-text" role="status">
+            Cancelled. Nothing is being captured.
+          </p>
+        )}
+        {source.kind === 'failed' && (
+          <p className="capture-bar__error hint-text" role="alert">
+            {source.message}
+          </p>
+        )}
+
+            </div>
+
+      <div className="capture-bar__section">
+  <h3 className="micro-label">Capture profile</h3>
+        <div className="capture-bar__row capture-bar__row--actions">{profileRow()}</div>
+        {profiles.length === 0 && (
+          <Disclosure>
+            <p className="capture-bar__hint hint-text">
+              A profile outlines the console screen inside the captured frame and the text box
+              inside that. Drawn once, every capture afterwards is a single click.
+            </p>
+          </Disclosure>
+        )}
+        <MismatchWarning source={source} profile={active} />
+
+            </div>
 
       {active !== null && (
-        <>
+        <div className="capture-bar__section">
           <h3 className="micro-label">Text box</h3>
           <div className="capture-bar__row capture-bar__row--actions">
             <button
@@ -388,78 +394,84 @@ export function CaptureBar({
               {read.reading.text === '' ? 'The box read as empty.' : read.reading.text}
             </p>
           )}
-        </>
+        </div>
       )}
 
-      <h3 className="micro-label">Alphabet</h3>
-      <div className="capture-bar__row capture-bar__row--actions">
-        <button type="button" className="button" onClick={() => setShowingGlyphs(true)}>
-          Review the alphabet…
-        </button>
-        <span className="capture-bar__size">
-          {glyphs.length} {glyphs.length === 1 ? 'glyph' : 'glyphs'} learned
-        </span>
-      </div>
-      <Disclosure>
-        <p className="capture-bar__hint hint-text">
-          One alphabet for the whole project — every profile reads with it, so a second profile
-          aimed at another box on the same console starts out already able to read.
-        </p>
-      </Disclosure>
+      <div className="capture-bar__section">
+  <h3 className="micro-label">Alphabet</h3>
+        <div className="capture-bar__row capture-bar__row--actions">
+          <button type="button" className="button" onClick={() => setShowingGlyphs(true)}>
+            Review the alphabet…
+          </button>
+          <span className="capture-bar__size">
+            {glyphs.length} {glyphs.length === 1 ? 'glyph' : 'glyphs'} learned
+          </span>
+        </div>
+        <Disclosure>
+          <p className="capture-bar__hint hint-text">
+            One alphabet for the whole project — every profile reads with it, so a second profile
+            aimed at another box on the same console starts out already able to read.
+          </p>
+        </Disclosure>
 
-      <h3 className="micro-label">Controller</h3>
-      {gamepadConnected ? (
-        RECORDER_ACTIONS.map((action) => (
-          <RecorderBindingRow
-            key={action}
-            action={action}
-            binding={bindings.find((candidate) => candidate.action === action)}
-            listening={listeningAction === action}
-            disabled={listeningAction !== null && listeningAction !== action}
-            onListen={() => startListening(action)}
-            onCancelListen={stopListening}
+            </div>
+
+      <div className="capture-bar__section">
+  <h3 className="micro-label">Controller</h3>
+        {gamepadConnected ? (
+          RECORDER_ACTIONS.map((action) => (
+            <RecorderBindingRow
+              key={action}
+              action={action}
+              binding={bindings.find((candidate) => candidate.action === action)}
+              listening={listeningAction === action}
+              disabled={listeningAction !== null && listeningAction !== action}
+              onListen={() => startListening(action)}
+              onCancelListen={stopListening}
+            />
+          ))
+        ) : (
+          <p className="capture-bar__note hint-text" role="status">
+            No controller is connected. Chrome only reports one once a button on it has been
+            pressed, so press one now if it is already plugged in.
+          </p>
+        )}
+        <Disclosure>
+          <p className="capture-bar__hint hint-text">
+            A controller button reaches the app only while this page has focus — it does not make
+            the trigger global, only reachable without letting go of the controller. The New capture
+            and Extend last buttons in the canvas sidebar's Captures region always work, bound or not.
+          </p>
+        </Disclosure>
+
+        {calibration.kind === 'failed' && (
+          <p className="capture-bar__error hint-text" role="alert">
+            {calibration.message}
+          </p>
+        )}
+
+        {showingGlyphs && <GlyphSet glyphs={glyphs} onClose={() => setShowingGlyphs(false)} />}
+
+        {calibration.kind === 'open' && (
+          <CaptureCalibration
+            frame={calibration.frame}
+            profile={calibration.profile}
+            onCancel={() => setCalibration({ kind: 'closed' })}
+            onSave={(name, values) => onCalibrationSaved(calibration.profile, name, values)}
           />
-        ))
-      ) : (
-        <p className="capture-bar__note hint-text" role="status">
-          No controller is connected. Chrome only reports one once a button on it has been
-          pressed, so press one now if it is already plugged in.
-        </p>
-      )}
-      <Disclosure>
-        <p className="capture-bar__hint hint-text">
-          A controller button reaches the app only while this page has focus — it does not make
-          the trigger global, only reachable without letting go of the controller. The New capture
-          and Extend last buttons in the canvas sidebar's Captures region always work, bound or not.
-        </p>
-      </Disclosure>
+        )}
 
-      {calibration.kind === 'failed' && (
-        <p className="capture-bar__error hint-text" role="alert">
-          {calibration.message}
-        </p>
-      )}
+        {read.kind === 'read' && read.reading.unknown.length > 0 && active !== null && (
+          <GlyphLearner
+            tiles={read.reading.unknown}
+            cancelLabel="Cancel"
+            onCancel={() => setRead({ kind: 'idle' })}
+            onConfirm={(glyphs) => onGlyphsLearned(active, read.frame, glyphs)}
+          />
+        )}
+          </div>
 
-      {showingGlyphs && <GlyphSet glyphs={glyphs} onClose={() => setShowingGlyphs(false)} />}
-
-      {calibration.kind === 'open' && (
-        <CaptureCalibration
-          frame={calibration.frame}
-          profile={calibration.profile}
-          onCancel={() => setCalibration({ kind: 'closed' })}
-          onSave={(name, values) => onCalibrationSaved(calibration.profile, name, values)}
-        />
-      )}
-
-      {read.kind === 'read' && read.reading.unknown.length > 0 && active !== null && (
-        <GlyphLearner
-          tiles={read.reading.unknown}
-          cancelLabel="Cancel"
-          onCancel={() => setRead({ kind: 'idle' })}
-          onConfirm={(glyphs) => onGlyphsLearned(active, read.frame, glyphs)}
-        />
-      )}
-    </section>
+      </section>
   )
 }
 
@@ -483,7 +495,7 @@ function RecorderBindingRow({
   return (
     <div className="capture-bar__row capture-bar__row--actions">
       <span className="capture-bar__binding-label">{ACTION_LABELS[action]}</span>
-      <span className="capture-bar__size">
+      <span className="capture-bar__binding" data-bound={binding === undefined ? undefined : 'true'}>
         {binding === undefined ? 'Not bound' : `Button ${binding.buttonIndex + 1}`}
       </span>
       {listening ? (

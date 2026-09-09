@@ -242,8 +242,11 @@ function RelevanceTagRow({
       >
         ⠿
       </button>
-      <span className="hue-chip relevance-tag-list__name" style={relevanceHueStyle(tag.hue)}>
+      <span className="relevance-tag-list__name" style={relevanceHueStyle(tag.hue)}>
         {tagLabel(tag)}
+      </span>
+      <span className="relevance-tag-list__uses hint-text">
+        {dialogues.filter((dialogue) => dialogue.relevance.includes(tag.id)).length}
       </span>
       <RowActions>
         <button

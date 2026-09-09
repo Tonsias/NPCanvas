@@ -2,11 +2,29 @@
    `insights__panel` uses for the relevance tag list above it, now that this is a standalone
    section rather than a rule-separated subsection of the dialogue panel column it used to sit in. */
 .capture-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  align-content: start;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+/* One subject each — source, profile, text box, alphabet, controller — so they can pair up two
+   across where the panel is wide enough, and be ruled apart where they cannot. A hairline
+   *inside* a panel divides subjects, not regions; see `.panel` in index.css. */
+.capture-bar__section {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--space-2);
-  padding: var(--space-4);
+  min-width: 0;
+}
+
+/* The connection is the whole rig's precondition, so it takes the full width above the rest. */
+.capture-bar__section:first-child {
+  grid-column: 1 / -1;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
 }
 
 .capture-bar__row {
@@ -86,12 +104,11 @@
 .capture-bar__transcript {
   align-self: stretch;
   margin: 0;
-  padding: var(--space-2);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: var(--space-3);
+  font-family: var(--font-mono);
   font-size: var(--text-xs);
   color: var(--text);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--surface-well);
   border-radius: var(--radius-2);
   white-space: pre-wrap;
 }
@@ -102,6 +119,21 @@
   font-size: var(--text-xs);
   color: var(--text);
   min-width: 6rem;
+}
+
+/* Which button is bound, in the describing colour: a binding is a fact about the rig, not a
+   verb you press here. Unbound is not a fact worth colouring. */
+.capture-bar__binding {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
+.capture-bar__binding[data-bound] {
+  background: var(--accent-2-soft);
+  color: var(--accent-2-ink);
+  font-weight: 700;
 }
 
 /* `.hint-text` (index.css) supplies margin/size/colour for all three; only the error overrides

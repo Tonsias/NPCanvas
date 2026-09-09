@@ -21,31 +21,48 @@
 
 /* `.screen-title` (index.css) replaces the old `.settings__title`. */
 
-/* `.panel` (index.css) supplies the border/surface; the radius is flatter than the base here. */
+/* The vocabulary and the shortcuts on the left, the capture rig on the right: one column is what
+   the project owns, the other is the machine that reads it. Stacked wherever the two do not fit,
+   which is the same width the shortcut grid stops being two columns at. */
+.settings__columns {
+  display: grid;
+  grid-template-columns: 23.75rem minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+@media (max-width: 72rem) {
+  .settings__columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* `.panel` (index.css) supplies the border/surface; this is only the layout. */
 .settings__section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
-  border-radius: var(--radius-2);
 }
 
 .settings__section-title {
   margin: 0;
+  font-family: var(--font-heading);
   font-size: var(--text-lg);
 }
 
+/* Two groups across wherever the panel is wide enough — a shortcut row is a key cluster and a
+   short sentence, and two of them side by side read the same as one. */
 .settings__shortcut-groups {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: var(--space-4) var(--space-5);
 }
 
-/* `.micro-label` (index.css) supplies the uppercase treatment; the tracking is tighter and the
-   margin holds space for the list below it. */
+/* `.micro-label` (index.css) supplies the uppercase treatment; the margin holds space for the
+   list below it. */
 .settings__shortcut-group-title {
   margin: 0 0 var(--space-2);
-  letter-spacing: 0.04em;
 }
 
 .settings__shortcut-list {
@@ -57,21 +74,14 @@
 
 /* `.settings__shortcut-row` (index.css) supplies the layout. */
 
+/* A fixed column, so the descriptions line up down the group however wide a cluster gets. */
 .settings__shortcut-keys {
   margin: 0;
   flex: 0 0 auto;
-  min-width: 12rem;
+  min-width: 5.25rem;
 }
 
-.settings__key {
-  display: inline-block;
-  padding: 0.05rem var(--space-2);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-1);
-  background: var(--surface-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-2xs);
-}
+/* `kbd` (index.css) supplies the cap; this screen is where that recipe earns itself. */
 
 .settings__shortcut-does {
   margin: 0;
@@ -98,9 +108,8 @@
   line-height: 1;
   color: var(--text-muted);
   background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-2);
-  padding: var(--space-1) var(--space-2);
+  border: none;
+  padding: var(--space-1);
   cursor: grab;
 }
 
@@ -108,15 +117,41 @@
   cursor: grabbing;
 }
 
-/* The row's primary label — a `hue-chip` (index.css) is the same pill a filter's active zone
-   or quest chip already uses, keyed off `--relevance-hue` the same way. */
+/* A row in a list, not a chip stretched to the panel's width: the word is the content and the
+   hue is a mark beside it. Order in this list is the project's canonical display order — the
+   panel's own description says so, since nothing about the rows shows it. */
+.relevance-tag-list__item {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-2);
+  background: var(--surface-well);
+}
+
 .relevance-tag-list__name {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--text-sm);
+  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.relevance-tag-list__name::before {
+  content: '';
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: var(--radius-round);
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--relevance-hue));
+}
+
+/* How many lines carry the word — the one fact about a tag this list can state. */
+.relevance-tag-list__uses {
+  flex: none;
+  font-family: var(--font-mono);
 }
 
 /* The rename form and delete confirm use `EditableRow`'s default classes here (no override) —

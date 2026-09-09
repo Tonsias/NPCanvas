@@ -79,17 +79,19 @@ export function SettingsScreen({ project }: { project: ProjectFile }): ReactElem
         <h1 className="screen-title">Settings</h1>
       </header>
 
-      {/* The project's own vocabulary, above the machine setup below it — the words the project
-          uses come before the rig that reads them off the screen. */}
-      <RelevanceTagList relevanceTags={project.relevanceTags} dialogues={project.dialogues} />
+      <div className="settings__columns">
+        {/* The project's own vocabulary, beside the machine setup — the words the project uses
+            come before the rig that reads them off the screen. */}
+        <RelevanceTagList relevanceTags={project.relevanceTags} dialogues={project.dialogues} />
 
-      {/* Session-long setup, not a per-dialogue field — moved here from the dialogue panel (#91),
-          which now carries only the button that acts on the selected line. */}
-      <CaptureBar
-        profiles={project.captureProfiles}
-        glyphs={project.glyphs}
-        bindings={project.recorderBindings}
-      />
+        {/* Session-long setup, not a per-dialogue field — moved here from the dialogue panel
+            (#91), which now carries only the button that acts on the selected line. */}
+        <CaptureBar
+          profiles={project.captureProfiles}
+          glyphs={project.glyphs}
+          bindings={project.recorderBindings}
+        />
+      </div>
 
       <section className="settings__section panel" aria-labelledby="settings-shortcuts-heading">
         <h2 id="settings-shortcuts-heading" className="settings__section-title">
