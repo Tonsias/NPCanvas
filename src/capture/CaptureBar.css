@@ -1,4 +1,4 @@
-/* Its own section on the settings screen (#91) — the same `.card` (index.css) recipe
+/* Its own section on the settings screen (#91) — the same `.panel` (index.css) recipe
    `insights__panel` uses for the relevance tag list above it, now that this is a standalone
    section rather than a rule-separated subsection of the dialogue panel column it used to sit in. */
 .capture-bar {

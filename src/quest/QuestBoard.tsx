@@ -278,7 +278,7 @@ function QuestCard({
   return (
     <article
       id={questCardElementId(quest.id)}
-      className="quest-card card"
+      className="quest-card panel"
       data-status={quest.status}
       style={questAccentStyle(quest)}
       aria-labelledby={nameId}

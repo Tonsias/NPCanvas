@@ -62,7 +62,7 @@ export function SidePanel({
   return (
     <aside
       ref={panelRef}
-      className={['side-panel', edge === 'left' ? 'side-panel--left' : null, className]
+      className={['side-panel panel', edge === 'left' ? 'side-panel--left' : null, className]
         .filter((part) => part !== null)
         .join(' ')}
       aria-label={ariaLabel}

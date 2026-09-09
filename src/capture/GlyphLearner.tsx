@@ -60,7 +60,7 @@ export function GlyphLearner({
 
   return (
     <div className="glyph-learner overlay-backdrop" role="dialog" aria-modal="true" aria-label="Learn the console's alphabet">
-      <div className="glyph-learner__panel card">
+      <div className="glyph-learner__panel panel">
         <header className="panel-header">
           <h2 className="panel-title">
             {tiles.length === 1 ? 'One tile is not in the alphabet yet' : `${tiles.length} tiles are not in the alphabet yet`}

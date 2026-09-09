@@ -57,7 +57,7 @@ export function RelevanceBreakdown({
   }
 
   return (
-    <section className="insights__panel card" aria-label="Relevance breakdown">
+    <section className="insights__panel panel" aria-label="Relevance breakdown">
       <header className="insights__panel-head">
         <h2 className="insights__panel-title">Relevance</h2>
         <Disclosure>

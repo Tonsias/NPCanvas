@@ -72,7 +72,7 @@ export function NpcDossier({
   const selected = profiles.find((profile) => profile.key === selectedKey) ?? profiles[0] ?? null
 
   return (
-    <section className="insights__panel card" aria-label="NPC dossier">
+    <section className="insights__panel panel" aria-label="NPC dossier">
       <header className="insights__panel-head">
         <h2 className="insights__panel-title">Who said it</h2>
         <p className="insights__panel-note hint-text">NPCs by line count.</p>

@@ -11,6 +11,7 @@
   flex: 1;
   min-height: 0;
   display: flex;
+  gap: var(--space-3);
   /* The anchor a narrow-window sidebar overlays against — see the media query below. Harmless
      at every wider width, where the sidebar stays a normal flex sibling and never needs it. */
   position: relative;
@@ -22,8 +23,6 @@
   /* Scrolls on its own, so a project with many maps never pushes the canvas off screen. */
   overflow-y: auto;
   padding: var(--space-3);
-  border-right: 1px solid var(--border);
-  background: var(--surface-1);
 }
 
 /* The sidebar and the dialogue panel are together a fixed 38rem of chrome (16rem + 22rem) that
@@ -51,7 +50,9 @@
   min-width: 0;
   position: relative;
   overflow: hidden;
-  background: var(--surface-0);
+  /* The map plate sits in a recess, so the canvas is the one panel with no padding of its own. */
+  padding: 0;
+  background: var(--surface-well);
 }
 
 .map-screen--empty {

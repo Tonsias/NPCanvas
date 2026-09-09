@@ -3,7 +3,7 @@
   z-index: 22;
 }
 
-/* `.card` (index.css) supplies the border/radius/surface. */
+/* `.panel` (index.css) supplies the border/radius/surface. */
 .canvas-display-dialog__panel {
   display: flex;
   flex-direction: column;

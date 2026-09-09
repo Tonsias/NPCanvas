@@ -2,7 +2,7 @@
   z-index: 21;
 }
 
-/* `.card` (index.css) supplies the border/radius/surface. */
+/* `.panel` (index.css) supplies the border/radius/surface. */
 .glyph-learner__panel {
   display: flex;
   flex-direction: column;

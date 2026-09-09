@@ -156,7 +156,7 @@ export function CaptureCalibration({
 
   return (
     <div className="capture-calibration overlay-backdrop" role="dialog" aria-modal="true" aria-label="Calibrate a capture profile">
-      <div className="capture-calibration__panel card">
+      <div className="capture-calibration__panel panel">
         <header className="capture-calibration__header">
           <h2 className="panel-title">
             {profile === null ? 'New capture profile' : `Re-calibrate ${profile.name}`}

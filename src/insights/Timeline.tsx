@@ -304,7 +304,7 @@ function TimelinePanel({
   children: ReactNode
 }): ReactElement {
   return (
-    <section className="insights__panel card" aria-label="Timeline">
+    <section className="insights__panel panel" aria-label="Timeline">
       <header className="insights__panel-head">
         <h2 className="insights__panel-title">Timeline</h2>
         <p className="insights__panel-note hint-text">{UNIT_NOTE[unit]}</p>

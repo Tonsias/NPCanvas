@@ -325,7 +325,7 @@ export function CaptureBar({
   }
 
   return (
-    <section className="capture-bar card" aria-label="Screen capture">
+    <section className="capture-bar panel" aria-label="Screen capture">
       <h3 className="micro-label">Capture source</h3>
       <div className="capture-bar__row">{connectionRow()}</div>
       <Disclosure>

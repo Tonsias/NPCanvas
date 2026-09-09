@@ -175,7 +175,7 @@ export function CinemaScreen({
       <div className="cinema__body" ref={bodyRef}>
         <aside
           ref={questRailRef}
-          className="cinema__quest-rail card"
+          className="cinema__quest-rail panel"
           style={
             viewState.questRailWidth === null
               ? undefined
@@ -201,7 +201,7 @@ export function CinemaScreen({
           />
         </aside>
         <div className="cinema__main">
-          <div className="cinema__stage card">
+          <div className="cinema__stage panel">
             <CinemaStage
               moment={moment}
               frame={playhead.frame}
@@ -210,7 +210,7 @@ export function CinemaScreen({
               onSeekFrame={(frame) => dispatch({ kind: 'frame-seek', frame })}
             />
           </div>
-          <div className="cinema__band card">
+          <div className="cinema__band panel">
             <CinemaBand
               project={project}
               reel={reel}
@@ -222,7 +222,7 @@ export function CinemaScreen({
         </div>
         <aside
           ref={railRef}
-          className="cinema__rail card"
+          className="cinema__rail panel"
           style={
             viewState.railWidth === null ? undefined : { width: `${viewState.railWidth}px` }
           }
@@ -261,7 +261,7 @@ function Transport({
   dispatch: (action: PlayheadAction) => void
 }): ReactElement {
   return (
-    <div className="cinema__transport card">
+    <div className="cinema__transport panel">
       <button
         type="button"
         className="button"

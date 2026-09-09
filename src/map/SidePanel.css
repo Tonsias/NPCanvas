@@ -17,8 +17,7 @@
   position: relative;
   display: flex;
   min-height: 0;
-  border-left: 1px solid var(--border);
-  background: var(--surface-1);
+  padding: 0;
 }
 
 /* The panel's actual content, and the part that scrolls. Separate from the `<aside>` so the
@@ -41,8 +40,7 @@
   flex: none;
 }
 
-/* Straddles the seam, so the grab area is where the eye already sees the edge. Wider than the
-   1px border it sits on: a hairline is not a pointer target. */
+/* Straddles the seam, so the grab area is where the eye already sees the gap between panels. */
 .side-panel__resizer {
   position: absolute;
   inset-block: 0;
@@ -64,14 +62,8 @@
   outline-offset: 1px;
 }
 
-/* A panel left of its own content (Cinema's quest rail) mirrors both the border it shares with
-   its neighbour and the handle's edge — the handle is always on the seam, whichever side that
-   seam is on. */
-.side-panel--left {
-  border-left: none;
-  border-right: 1px solid var(--border);
-}
-
+/* A panel left of its own content (Cinema's quest rail) puts the handle on its other edge —
+   the handle is always on the seam, whichever side that seam is on. */
 .side-panel--left .side-panel__resizer {
   left: auto;
   right: -4px;

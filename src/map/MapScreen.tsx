@@ -515,7 +515,7 @@ export function MapScreen({
         />
       )}
       <div className="map-screen__body" ref={bodyRef}>
-        <aside className="map-screen__sidebar">
+        <aside className="map-screen__sidebar panel">
           <h1 className="visually-hidden">Canvas</h1>
           <div className="map-screen__tools">
             <button
@@ -561,7 +561,7 @@ export function MapScreen({
           </details>
           <CanvasLegend relevanceTags={project.relevanceTags} />
         </aside>
-        <div className="map-screen__canvas">
+        <div className="map-screen__canvas panel">
           <MapCanvas
             maps={placedMaps}
             zones={drawnZones}

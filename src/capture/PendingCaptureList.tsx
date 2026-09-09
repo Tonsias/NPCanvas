@@ -244,7 +244,7 @@ function CaptureCard({
 
   return (
     <div
-      className="pending-capture-list__row card"
+      className="pending-capture-list__row panel"
       data-armed={armed ? 'true' : undefined}
       data-recording={recording ? 'true' : undefined}
     >

@@ -7,10 +7,10 @@
   width: 100%;
   max-width: 68rem;
   margin: 0 auto;
-  padding: var(--space-5) var(--space-5) var(--space-7);
+  padding-bottom: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-3);
 }
 
 .settings__bar {
@@ -21,7 +21,7 @@
 
 /* `.screen-title` (index.css) replaces the old `.settings__title`. */
 
-/* `.card` (index.css) supplies the border/surface; the radius is flatter than the base here. */
+/* `.panel` (index.css) supplies the border/surface; the radius is flatter than the base here. */
 .settings__section {
   display: flex;
   flex-direction: column;

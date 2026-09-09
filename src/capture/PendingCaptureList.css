@@ -18,7 +18,7 @@
   font-size: var(--text-xs);
 }
 
-/* The `.card` base (index.css) supplies the border/surface; the radius is flatter than the base
+/* The `.panel` base (index.css) supplies the border/surface; the radius is flatter than the base
    here, to match the sidebar's other rows. */
 .pending-capture-list__row {
   display: flex;

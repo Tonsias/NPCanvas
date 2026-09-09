@@ -7,10 +7,10 @@
   width: 100%;
   max-width: 68rem;
   margin: 0 auto;
-  padding: var(--space-5) var(--space-5) var(--space-7);
+  padding-bottom: var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .insights__bar {
@@ -39,7 +39,7 @@
 
 /* ---- filter bar ---- */
 
-/* The `.card` base (index.css) supplies the border/radius/surface; this is only the layout. */
+/* The `.panel` base (index.css) supplies the border/radius/surface; this is only the layout. */
 .filter-bar {
   display: flex;
   flex-direction: column;
@@ -144,7 +144,7 @@
 
 /* ---- panels and charts ---- */
 
-/* The `.card` base (index.css) supplies the border/radius/surface; this is only the layout. */
+/* The `.panel` base (index.css) supplies the border/radius/surface; this is only the layout. */
 .insights__panel {
   display: flex;
   flex-direction: column;

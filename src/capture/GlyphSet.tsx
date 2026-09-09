@@ -35,7 +35,7 @@ export function GlyphSet({
     <div className="glyph-set overlay-backdrop">
       <div
         ref={ref}
-        className="glyph-set__panel card"
+        className="glyph-set__panel panel"
         role="dialog"
         aria-modal="true"
         aria-label="The alphabet this project has learned"

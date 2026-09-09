@@ -36,7 +36,7 @@ export function CanvasDisplayDialog({
     <div className="canvas-display-dialog overlay-backdrop">
       <div
         ref={ref}
-        className="canvas-display-dialog__panel card"
+        className="canvas-display-dialog__panel panel"
         role="dialog"
         aria-modal="true"
         aria-label="Canvas display settings"

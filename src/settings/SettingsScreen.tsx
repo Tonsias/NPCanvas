@@ -91,7 +91,7 @@ export function SettingsScreen({ project }: { project: ProjectFile }): ReactElem
         bindings={project.recorderBindings}
       />
 
-      <section className="settings__section card" aria-labelledby="settings-shortcuts-heading">
+      <section className="settings__section panel" aria-labelledby="settings-shortcuts-heading">
         <h2 id="settings-shortcuts-heading" className="settings__section-title">
           Keyboard shortcuts
         </h2>

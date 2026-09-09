@@ -2,7 +2,7 @@
   z-index: 20;
 }
 
-/* `.card` (index.css) supplies the border/radius/surface. */
+/* `.panel` (index.css) supplies the border/radius/surface. */
 .capture-calibration__panel {
   display: flex;
   flex-direction: column;

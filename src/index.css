@@ -239,12 +239,15 @@ body {
   font: inherit;
   font-family: var(--font-heading);
   font-size: var(--text-2xs);
+  /* A clipped verb is a bug: a row too narrow for two buttons stacks them, never shrinks one. */
+  line-height: 1.2;
+  white-space: nowrap;
   min-height: var(--control-height);
-  color: var(--text-muted);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-2);
-  padding: var(--space-1) var(--space-2);
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-round);
+  padding: var(--space-1) var(--space-3);
   cursor: pointer;
   transition:
     color var(--duration-fast) var(--ease-standard),
@@ -259,24 +262,30 @@ body {
   display: block;
 }
 
-/* Chromium-only, so `:has` can square an icon-only button here rather than making every one of
+/* Chromium-only, so `:has` can round an icon-only button here rather than making every one of
    the ~50 call sites also name a modifier class — and a button that later regains a word loses
-   the squaring on its own. */
+   the shaping on its own. An icon on its own is the ghost variant: no fill, no border, muted. */
 .button:has(> .icon:only-child),
 .button--primary:has(> .icon:only-child) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding-inline: var(--space-1);
+  width: var(--control-height);
+  padding-inline: 0;
+}
+
+.button:has(> .icon:only-child) {
+  color: var(--text-muted);
+  border-color: transparent;
 }
 
 .button:hover:not(:disabled) {
-  color: var(--text);
-  background: var(--surface-3);
+  color: var(--accent-ink);
+  border-color: var(--accent);
 }
 
 .button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: default;
 }
 
@@ -286,19 +295,25 @@ body {
 }
 
 .button--danger {
-  border-color: var(--border-strong);
   color: var(--danger);
+}
+
+.button--danger:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .button--primary {
   font: inherit;
   font-family: var(--font-heading);
   font-size: var(--text-sm);
+  line-height: 1.2;
+  white-space: nowrap;
   min-height: var(--control-height);
   color: var(--accent-contrast);
   background: var(--accent);
   border: 1px solid var(--accent);
-  border-radius: var(--radius-2);
+  border-radius: var(--radius-round);
   padding: var(--space-2) var(--space-4);
   cursor: pointer;
   transition:
@@ -355,11 +370,13 @@ body {
 }
 
 .segmented-button:first-child {
-  border-radius: var(--radius-2) 0 0 var(--radius-2);
+  border-radius: var(--radius-round) 0 0 var(--radius-round);
+  padding-left: var(--space-3);
 }
 
 .segmented-button:last-child {
-  border-radius: 0 var(--radius-2) var(--radius-2) 0;
+  border-radius: 0 var(--radius-round) var(--radius-round) 0;
+  padding-right: var(--space-3);
 }
 
 .segmented-button[aria-checked='true'] {
@@ -376,12 +393,16 @@ body {
 }
 
 /* An uppercase section label — a form's legend, a chart's axis title, a capture profile's
-   heading. Never below the app's own text floor; see the typography scale above. */
+   heading. Body face, not the display one: this is the app's densest text, and rationing
+   Caprasimo to what is read at a glance is what keeps it legible. Never below the app's own
+   text floor; see the typography scale above. */
 .micro-label {
   margin: 0;
+  font-family: var(--font-body);
   font-size: var(--text-2xs);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: var(--text-muted);
 }
 
@@ -681,10 +702,23 @@ body {
   font-size: var(--text-sm);
   min-height: var(--control-height);
   color: var(--text);
-  background: var(--surface-2);
+  background: var(--surface-well);
   border: 1px solid var(--border);
-  border-radius: var(--radius-2);
-  padding: var(--space-2);
+  border-radius: var(--radius-round);
+  padding: var(--space-2) var(--space-3);
+}
+
+/* Every shortcut hint in the app wears a real key cap — the tool rail's letters, Cinema's Space
+   and brackets, the search palette's Esc. */
+kbd {
+  font-family: var(--font-body);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-1);
+  background: var(--surface-well);
+  border: 1px solid var(--border);
+  color: var(--text);
 }
 
 .text-input:focus-visible {
@@ -692,12 +726,28 @@ body {
   outline-offset: 1px;
 }
 
-/* A surface for a self-contained block — a card, a row, a panel section — that would otherwise
-   restate the same border/radius/background in every feature file. */
-.card {
+/* Every rail, workspace and board region. Panels are leaves resting on the ground: one shadow
+   step, separated by gaps rather than shared edges, which is why no region-dividing border
+   survives anywhere below. A caller with its own padding overrides this one — feature
+   stylesheets load after this file. */
+.panel {
+  padding: var(--space-4);
   border: 1px solid var(--border);
   border-radius: var(--radius-3);
   background: var(--surface-1);
+  box-shadow: var(--shadow-panel);
+}
+
+/* A recess inside a panel — a row in a list, a stat box, a quoted line — and the deeper one for
+   media plates and the console screen. Neither carries a border: the fill is the boundary. */
+.well {
+  border-radius: var(--radius-2);
+  background: var(--surface-well);
+}
+
+.sunk {
+  border-radius: var(--radius-2);
+  background: var(--surface-sunk);
 }
 
 /* One learned or unrecognised glyph, in the learner's list or the set's grid — a small
@@ -717,9 +767,9 @@ body {
 .glyph-tile-frame {
   flex: none;
   fill: var(--text);
-  background: var(--surface-0);
+  background: var(--surface-sunk);
   border: 1px solid var(--border);
-  border-radius: var(--radius-2);
+  border-radius: var(--radius-1);
 }
 
 /* A full-screen backdrop for a modal panel — calibration, the glyph learner and the glyph set
@@ -761,9 +811,9 @@ body {
   display: block;
   width: 4rem;
   padding: 2px;
-  background: var(--surface-2);
+  background: var(--surface-well);
   border: 1px solid var(--border);
-  border-radius: var(--radius-2);
+  border-radius: var(--radius-1);
   cursor: pointer;
 }
 
