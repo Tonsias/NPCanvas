@@ -401,25 +401,15 @@ function applyAction(state: AppState, action: Action): AppState {
 
     case 'dialogue/reference-added': {
       if (state.kind !== 'ready') return state
-      const target = findById(state.project, 'dialogues', action.dialogueId)
-      if (target === null) return state
       if (action.dialogueId === action.referenceId) return state
+      if (findById(state.project, 'dialogues', action.dialogueId) === null) return state
       if (findById(state.project, 'dialogues', action.referenceId) === null) return state
-      if (target.references.includes(action.referenceId)) return state
-      return replaceIn(state, 'dialogues', target, {
-        ...target,
-        references: [...target.references, action.referenceId],
-      })
+      return setEdge(state, action.dialogueId, action.referenceId, true)
     }
 
     case 'dialogue/reference-removed': {
       if (state.kind !== 'ready') return state
-      const target = findById(state.project, 'dialogues', action.dialogueId)
-      if (target === null || !target.references.includes(action.referenceId)) return state
-      return replaceIn(state, 'dialogues', target, {
-        ...target,
-        references: target.references.filter((id) => id !== action.referenceId),
-      })
+      return setEdge(state, action.dialogueId, action.referenceId, false)
     }
 
     case 'dialogue/deleted': {
@@ -946,6 +936,35 @@ function replaceIn<K extends ListField>(
   }
 }
 
+/**
+ * Writes both halves of one reference edge in a single pass — `Dialogue.references` is symmetric,
+ * and a reducer that touched only the named dialogue is the one way the two halves could ever
+ * disagree. Removal accepts a half-written edge so a document repaired mid-session can still be
+ * cleaned up; either way an edge already in the wanted state returns the identical state.
+ */
+function setEdge(
+  state: ReadyState,
+  a: DialogueId,
+  b: DialogueId,
+  present: boolean,
+): AppState {
+  let changed = false
+  const dialogues = state.project.dialogues.map((dialogue) => {
+    const other = dialogue.id === a ? b : dialogue.id === b ? a : null
+    if (other === null) return dialogue
+    if (dialogue.references.includes(other) === present) return dialogue
+    changed = true
+    return {
+      ...dialogue,
+      references: present
+        ? [...dialogue.references, other]
+        : dialogue.references.filter((id) => id !== other),
+    }
+  })
+  if (!changed) return state
+  return { ...state, project: { ...state.project, dialogues } }
+}
+
 function findById<K extends ListField>(
   project: ProjectFile, field: K, id: ProjectFile[K][number]['id'],
 ): ProjectFile[K][number] | null {
@@ -1069,7 +1088,8 @@ function pruneDialogueReferences(
 }
 
 // The merge counterpart to pruneDialogueReferences: repoint references when a dialogue merges.
-// Drop self-references created by the merge (A pointed at B, B merges into A).
+// Drop self-references created by the merge (A linked to B, B merges into A). Symmetry survives
+// without a second pass: the target already absorbed the source's own half in `merged`.
 function repointDialogueReferences(dialogues: Dialogue[], from: DialogueId, into: DialogueId): Dialogue[] {
   return dialogues.map((dialogue) => {
     if (!dialogue.references.includes(from)) return dialogue

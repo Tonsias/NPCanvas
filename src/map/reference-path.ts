@@ -12,8 +12,9 @@ type ReferenceEdge = {
   toPoint: Point
 }
 
-// One edge per stored reference — a dialogue pointing at three lines draws three edges, not one
-// fan-out shape.
+// One edge per link, not per stored half: `Dialogue.references` is symmetric, so both endpoints
+// name each other and a naive pass would draw every line twice. Deduplicated by the pair rather
+// than by keeping one direction, so a half-written edge still draws.
 export function referenceEdges(
   maps: readonly GameMap[],
   dialogues: readonly Dialogue[],
@@ -21,6 +22,7 @@ export function referenceEdges(
   const mapsById = new Map<MapId, GameMap>(maps.map((map) => [map.id, map]))
   const dialoguesById = new Map<DialogueId, Dialogue>(dialogues.map((dialogue) => [dialogue.id, dialogue]))
 
+  const drawn = new Set<string>()
   const edges: ReferenceEdge[] = []
   for (const dialogue of dialogues) {
     const fromMap = mapsById.get(dialogue.mapId)
@@ -30,6 +32,10 @@ export function referenceEdges(
       if (target === undefined) continue
       const toMap = mapsById.get(target.mapId)
       if (toMap === undefined) continue
+      const pair =
+        dialogue.id < targetId ? `${dialogue.id} ${targetId}` : `${targetId} ${dialogue.id}`
+      if (drawn.has(pair)) continue
+      drawn.add(pair)
       edges.push({
         from: dialogue.id,
         to: target.id,

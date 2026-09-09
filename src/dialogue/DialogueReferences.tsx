@@ -8,11 +8,11 @@ import type { Dialogue, DialogueId, Zone, ZoneId } from '../project/types.ts'
 import { Icon } from '../app/Icon.tsx'
 import './DialogueReferences.css'
 
-// "Points at" is dialogue.references, edited here. "Pointed at by" is derived by scanning every
-// other dialogue — the same shape DialogueQuestLinks uses to find a dialogue's quests — so the
-// inverse can never disagree with the forward list stored on disk. The partner is picked by a
-// click on its own pin rather than a search list — a name in a dropdown says nothing about
-// where on the map it is, which is the whole reason to be looking at the canvas already.
+// One list, because `Dialogue.references` is symmetric: a link reads the same from either end, so
+// splitting it into "points at" and "pointed at by" would show the same partner twice. Removing
+// from here removes both halves — see the reducer's `setEdge`. The partner is picked by a click
+// on its own pin rather than a search list — a name in a dropdown says nothing about where on the
+// map it is, which is the whole reason to be looking at the canvas already.
 export function DialogueReferences({
   dialogue,
   dialogues,
@@ -32,7 +32,7 @@ export function DialogueReferences({
   onCancelPick: () => void
 }): ReactElement {
   const dialogueId = dialogue.id
-  const pointsAt = useMemo(
+  const linked = useMemo(
     () =>
       dialogue.references.flatMap((id) => {
         const target = dialogues.find((candidate) => candidate.id === id)
@@ -40,26 +40,22 @@ export function DialogueReferences({
       }),
     [dialogue.references, dialogues],
   )
-  const pointedAtBy = useMemo(
-    () => dialogues.filter((candidate) => candidate.references.includes(dialogueId)),
-    [dialogues, dialogueId],
-  )
 
   return (
     <section className="dialogue-references dialogue-panel__section">
-      <h3 className="micro-label">Points at</h3>
-      {pointsAt.length === 0 ? (
-        <p className="dialogue-references__empty hint-text">Points at nothing yet.</p>
+      <h3 className="micro-label">Linked lines</h3>
+      {linked.length === 0 ? (
+        <p className="dialogue-references__empty hint-text">Linked to nothing yet.</p>
       ) : (
         <ul className="dialogue-references__list">
-          {pointsAt.map((target) => (
+          {linked.map((target) => (
             <li key={target.id} className="dialogue-references__item">
               <ReferenceRow target={target} zonesById={zonesById} zoneIndex={zoneIndex} />
               <button
                 type="button"
                 className="button"
-                aria-label={`Stop pointing at ${npcLabel(npcKey(target))}`}
-                title="Remove"
+                aria-label={`Unlink ${npcLabel(npcKey(target))}`}
+                title="Unlink"
                 onClick={() =>
                   dispatch({
                     kind: 'dialogue/reference-removed',
@@ -78,7 +74,7 @@ export function DialogueReferences({
       {picking ? (
         <div className="dialogue-references__picking" role="status">
           <p className="dialogue-references__picking-hint hint-text">
-            Click the pin it should point at…
+            Click the pin it should link to…
           </p>
           <button
             type="button"
@@ -92,21 +88,8 @@ export function DialogueReferences({
         </div>
       ) : (
         <button type="button" className="button" onClick={() => onStartPick(dialogueId)}>
-          Point at another line…
+          Link another line…
         </button>
-      )}
-
-      <h3 className="micro-label">Pointed at by</h3>
-      {pointedAtBy.length === 0 ? (
-        <p className="dialogue-references__empty hint-text">Nothing points at this yet.</p>
-      ) : (
-        <ul className="dialogue-references__list">
-          {pointedAtBy.map((source) => (
-            <li key={source.id} className="dialogue-references__item">
-              <ReferenceRow target={source} zonesById={zonesById} zoneIndex={zoneIndex} />
-            </li>
-          ))}
-        </ul>
       )}
     </section>
   )

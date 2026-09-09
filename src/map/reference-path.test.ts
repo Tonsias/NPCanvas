@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { asDialogueId, asMapId } from '../project/ids.ts'
 import type { Dialogue, GameMap, MapId, Point } from '../project/types.ts'
 import { referenceEdges } from './reference-path.ts'
-import { segmentArrow } from './trail-path.ts'
 
 const HARBOUR = asMapId('harbour')
 const CAVES = asMapId('caves')
@@ -78,22 +77,22 @@ describe('referenceEdges', () => {
     expect(referenceEdges([AT_ORIGIN], [source, target])).toEqual([])
   })
 
-  it('draws one edge per reference, for a line pointing at several others', () => {
-    const first = dialogue('first', HARBOUR, { x: 1, y: 1 })
-    const second = dialogue('second', HARBOUR, { x: 2, y: 2 })
+  it('draws one edge per reference, for a line linked to several others', () => {
+    const first = dialogue('first', HARBOUR, { x: 1, y: 1 }, ['source'])
+    const second = dialogue('second', HARBOUR, { x: 2, y: 2 }, ['source'])
     const source = dialogue('source', HARBOUR, { x: 0, y: 0 }, ['first', 'second'])
 
     const edges = referenceEdges([AT_ORIGIN], [source, first, second])
     expect(edges.map((edge) => edge.to)).toEqual([first.id, second.id])
   })
-})
 
-describe('segmentArrow', () => {
-  it('is null for a zero-length segment', () => {
-    expect(segmentArrow({ x: 5, y: 5 }, { x: 5, y: 5 })).toBeNull()
-  })
+  it('draws one line for a symmetric link, not one per stored half', () => {
+    const target = dialogue('target', HARBOUR, { x: 10, y: 20 }, ['source'])
+    const source = dialogue('source', HARBOUR, { x: 0, y: 0 }, ['target'])
 
-  it('is the midpoint and the angle for a real segment', () => {
-    expect(segmentArrow({ x: 0, y: 0 }, { x: 10, y: 0 })).toEqual({ point: { x: 5, y: 0 }, angle: 0 })
+    const edges = referenceEdges([AT_ORIGIN], [source, target])
+    expect(edges).toHaveLength(1)
+    expect(edges[0].from).toBe(source.id)
+    expect(edges[0].to).toBe(target.id)
   })
 })

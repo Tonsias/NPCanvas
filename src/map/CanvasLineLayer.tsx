@@ -6,19 +6,20 @@ import type { TrailArrow } from './trail-path.ts'
  * The shell shared by every canvas-space line layer (`TrailLayer`, `ReferenceLayer`): the
  * `mapsBounds` `<svg>`, the halo-then-path double stroke, and the direction arrowheads. Each
  * caller keeps its own geometry and filter semantics, and hands over only the drawn shapes.
+ * Arrowheads are the trail's alone — a reference edge is symmetric and claims no direction.
  */
 export function CanvasLineLayer({
   classPrefix,
   bounds,
   halo,
   path,
-  arrows,
+  arrows = [],
 }: {
   classPrefix: string
   bounds: Rect
   halo: ReactNode
   path: ReactNode
-  arrows: readonly TrailArrow[]
+  arrows?: readonly TrailArrow[]
 }): ReactElement {
   return (
     <div className={classPrefix}>

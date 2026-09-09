@@ -389,9 +389,8 @@
    placed by the translate inside --arrow-place rather than sitting where it was authored: its
    path is drawn about the origin so that scale and rotate act about the point it was moved to.
    Composing the two here rather than in JS is what keeps a zoom free of a per-arrow style write.
-   Shared with .reference-layer__arrow, which differs only in its fill colour below. */
-.trail-layer__arrow,
-.reference-layer__arrow {
+   The trail's alone: a reference edge is symmetric and draws no head. */
+.trail-layer__arrow {
   transform-box: view-box;
   transform-origin: 0 0;
   transform: var(--arrow-place) scale(calc(1 / (var(--map-zoom) * var(--map-scale))));
@@ -403,9 +402,6 @@
   stroke: var(--line-halo);
   stroke-width: 2;
   stroke-linejoin: round;
-}
-
-.trail-layer__arrow {
   fill: var(--trail);
 }
 
@@ -414,8 +410,7 @@
 /* Drawn the same way the trail is, in canvas space, for the same reason — see reference-path.ts
    and ReferenceLayer.tsx. `.reference-layer`'s own zero-size shell is the shared rule above. */
 
-/* Both widths and the arrowhead's counter-scale follow .trail-layer's own — no vector-effect,
-   for the reason measured there. */
+/* Both widths follow .trail-layer's own — no vector-effect, for the reason measured there. */
 .reference-layer__halo,
 .reference-layer__path {
   stroke-linecap: round;
@@ -426,10 +421,6 @@
   stroke-width: calc(1.8px / (var(--map-zoom) * var(--map-scale)));
   stroke-dasharray: calc(6px / (var(--map-zoom) * var(--map-scale)))
     calc(5px / (var(--map-zoom) * var(--map-scale)));
-}
-
-.reference-layer__arrow {
-  fill: var(--reference);
 }
 
 /* ---- pins ---- */

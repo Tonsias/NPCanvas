@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { MAX_MAP_SCALE, MIN_MAP_SCALE } from '../map/canvas-layout.ts'
 import type { ParseResult } from './data-file.ts'
 import { createEmptyProject, parseProjectFile, serializeProject } from './data-file.ts'
+import type { ProjectFile } from './types.ts'
 
 // Exercises every reader branch; rebuilt per test to avoid cross-test mutation.
 function validDocument(): Record<string, unknown> {
   return {
-    schemaVersion: 11,
+    schemaVersion: 12,
     projectName: 'Fisherman’s Rest',
     savedAt: '2026-08-14T10:00:00.000Z',
     maps: [
@@ -44,7 +45,7 @@ function validDocument(): Record<string, unknown> {
         media: [],
         spokenAt: '2026-08-14T09:12:00.000Z',
         relevance: ['worldbuilding'],
-        references: [],
+        references: ['dialogue-4'],
       },
       {
         id: 'dialogue-2',
@@ -206,14 +207,14 @@ describe('parseProjectFile', () => {
 
   it('rejects an unsupported schemaVersion, naming both the version read and the version expected', () => {
     const data = validDocument()
-    data.schemaVersion = 12
-    expect(rejectionMessage(data)).toBe('schemaVersion: expected 11, but found 12')
+    data.schemaVersion = 13
+    expect(rejectionMessage(data)).toBe('schemaVersion: expected 12 or 11, but found 13')
   })
 
   it('rejects a document at a version this app can no longer read', () => {
     const data = validDocument()
     data.schemaVersion = 10
-    expect(rejectionMessage(data)).toBe('schemaVersion: expected 11, but found 10')
+    expect(rejectionMessage(data)).toBe('schemaVersion: expected 12 or 11, but found 10')
   })
 
   it('rejects a map with no placement', () => {
@@ -476,7 +477,7 @@ describe('parseProjectFile: pendingCaptures', () => {
 describe('createEmptyProject', () => {
   it('writes the current schema version, so a new project is never migrated on its first read', () => {
     const project = createEmptyProject('Harbour')
-    expect(project.schemaVersion).toBe(11)
+    expect(project.schemaVersion).toBe(12)
     expect(project.captureProfiles).toEqual([])
     expect(project.glyphs).toEqual([])
     expect(project.pendingCaptures).toEqual([])
@@ -491,7 +492,7 @@ describe('createEmptyProject', () => {
     const reread = parseProjectFile(serializeProject(project))
     expect(reread.ok).toBe(true)
     if (!reread.ok) return
-    expect(reread.file.schemaVersion).toBe(11)
+    expect(reread.file.schemaVersion).toBe(12)
   })
 })
 
@@ -773,6 +774,7 @@ describe('parseProjectFile: repairs dangling references rather than rejecting', 
     const data = validDocument()
     const dialogues = data.dialogues as Record<string, unknown>[]
     dialogues[0].references = ['dialogue-2', 'dialogue-gone']
+    dialogues[3].references = []
 
     const result = repaired(data)
     expect(result.file.dialogues[0].references).toEqual(['dialogue-2'])
@@ -790,6 +792,7 @@ describe('parseProjectFile: repairs dangling references rather than rejecting', 
     const data = validDocument()
     const dialogues = data.dialogues as Record<string, unknown>[]
     dialogues[0].references = ['dialogue-1', 'dialogue-2']
+    dialogues[3].references = []
 
     const result = repaired(data)
     expect(result.file.dialogues[0].references).toEqual(['dialogue-2'])
@@ -852,5 +855,65 @@ describe('parseProjectFile: repairs dangling references rather than rejecting', 
       relevance: 0,
       dialogueReferences: 0,
     })
+  })
+})
+
+describe('parseProjectFile: references are symmetric on read', () => {
+  function parsed(data: unknown): Extract<ParseResult, { ok: true }> {
+    const result = parseProjectFile(JSON.stringify(data))
+    if (!result.ok) throw new Error(`expected the document to parse, but: ${result.message}`)
+    return result
+  }
+
+  function referencesOf(file: ProjectFile, id: string): readonly string[] {
+    return file.dialogues.find((dialogue) => dialogue.id === id)?.references ?? []
+  }
+
+  it('writes the missing half of a hand-edited one-sided link', () => {
+    const data = validDocument()
+    const dialogues = data.dialogues as Record<string, unknown>[]
+    dialogues[1].references = ['dialogue-3']
+
+    const result = parsed(data)
+    expect(referencesOf(result.file, 'dialogue-3')).toEqual(['dialogue-2'])
+    // Adding the half nobody lost is not a repair — ProjectRepairs reports what was dropped.
+    expect(result.repairs).toEqual({ kind: 'none' })
+  })
+
+  it('drops a duplicated reference rather than drawing and counting the link twice', () => {
+    const data = validDocument()
+    const dialogues = data.dialogues as Record<string, unknown>[]
+    dialogues[0].references = ['dialogue-4', 'dialogue-4']
+
+    expect(referencesOf(parsed(data).file, 'dialogue-1')).toEqual(['dialogue-4'])
+  })
+
+  it('takes the half of an edge whose other end was dropped with it', () => {
+    const data = validDocument()
+    const dialogues = data.dialogues as Record<string, unknown>[]
+    dialogues[3].mapId = 'map-gone'
+
+    const result = parsed(data)
+    expect(referencesOf(result.file, 'dialogue-1')).toEqual([])
+  })
+
+  it('migrates a V11 document by symmetrising its directed edges', () => {
+    const data = validDocument()
+    data.schemaVersion = 11
+    const dialogues = data.dialogues as Record<string, unknown>[]
+    // What V11 actually held: the edge written on one side only.
+    dialogues[0].references = []
+
+    const result = parsed(data)
+    expect(result.file.schemaVersion).toBe(12)
+    expect(referencesOf(result.file, 'dialogue-1')).toEqual(['dialogue-4'])
+    expect(referencesOf(result.file, 'dialogue-4')).toEqual(['dialogue-1'])
+
+    // The migration is one step: what it wrote is a V12 document with nothing left to do.
+    const reread = parseProjectFile(serializeProject(result.file))
+    expect(reread.ok).toBe(true)
+    if (!reread.ok) return
+    expect(reread.file.schemaVersion).toBe(12)
+    expect(referencesOf(reread.file, 'dialogue-1')).toEqual(['dialogue-4'])
   })
 })

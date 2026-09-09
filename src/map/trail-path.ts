@@ -37,9 +37,9 @@ export type TrailArrow = { point: Point; angle: number }
 // Below this, atan2(0,0) would plant a meaningless arrow for two lines logged at one point.
 const MIN_SEGMENT = 1e-3
 
-// Shared with reference-path.ts's edges — one rule for "midpoint, atan2 angle in degrees, skip
-// anything shorter than MIN_SEGMENT", not one copy per layer that draws a directed segment.
-export function segmentArrow(from: Point, to: Point): TrailArrow | null {
+// The trail's alone since references went symmetric: it is the only layer drawing a segment that
+// has a direction to mark.
+function segmentArrow(from: Point, to: Point): TrailArrow | null {
   const dx = to.x - from.x
   const dy = to.y - from.y
   if (Math.hypot(dx, dy) < MIN_SEGMENT) return null

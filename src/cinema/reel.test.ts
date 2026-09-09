@@ -43,7 +43,7 @@ function dialogue(
 
 function project(dialogues: Dialogue[], zones: Zone[] = [], maps: GameMap[] = [HARBOUR_MAP]): ProjectFile {
   return {
-    schemaVersion: 11,
+    schemaVersion: 12,
     projectName: 'Test',
     savedAt: '2026-08-15T10:00:00.000Z',
     maps,

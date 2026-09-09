@@ -83,8 +83,8 @@ export function CanvasDisplayDialog({
           disabled={referencesDisabled}
           title={
             referencesDisabled
-              ? 'No line points at another yet'
-              : 'Draw an arrow from a line to what it points at'
+              ? 'No line is linked to another yet'
+              : 'Draw the link between two lines on the canvas'
           }
           onClick={onToggleReferences}
         >

@@ -27,6 +27,7 @@ import type {
   Point,
   Polygon,
   ProjectFile,
+  ProjectFileV11,
   ProjectRepairs,
   Quest,
   QuestId,
@@ -43,7 +44,7 @@ import { QUEST_STATUSES, RECORDER_ACTIONS } from './types.ts'
 /** The document written to `<project>/data.json` when a folder is first connected. */
 export function createEmptyProject(name: string): ProjectFile {
   return {
-    schemaVersion: 11,
+    schemaVersion: 12,
     projectName: name,
     savedAt: new Date().toISOString(),
     maps: [],
@@ -447,9 +448,15 @@ function readDialogue(value: unknown, path: string, tagOrder: readonly Relevance
     media: readMedia(raw.media, `${path}.media`),
     spokenAt: readInstant(raw.spokenAt, `${path}.spokenAt`),
     relevance: readRelevance(raw.relevance, `${path}.relevance`, tagOrder),
-    references: readArray(raw.references, `${path}.references`).map((ref, index) =>
-      readDialogueId(ref, `${path}.references[${index}]`),
-    ),
+    // Deduplicated here, the way readRelevance dedupes a tag list: a hand-copied line in the
+    // pretty-printed file would otherwise draw one edge twice and count it twice.
+    references: [
+      ...new Set(
+        readArray(raw.references, `${path}.references`).map((ref, index) =>
+          readDialogueId(ref, `${path}.references[${index}]`),
+        ),
+      ),
+    ],
   }
 }
 
@@ -513,10 +520,11 @@ function isQuestStatus(value: string): value is QuestStatus {
 function readProjectFile(value: unknown): { file: ProjectFile; repairs: ProjectRepairs } {
   const raw = readObject(value, 'data.json')
   const schemaVersion = readNumber(raw.schemaVersion, 'schemaVersion')
-  if (schemaVersion !== 11) {
-    throw new SchemaError('schemaVersion', `11, but found ${String(schemaVersion)}`)
+  if (schemaVersion !== 12 && schemaVersion !== 11) {
+    throw new SchemaError('schemaVersion', `12 or 11, but found ${String(schemaVersion)}`)
   }
-  const repaired = repairReferences(readCurrentProjectFile(raw))
+  const file = schemaVersion === 12 ? readCurrentProjectFile(raw) : migrateV11(readProjectFileV11(raw))
+  const repaired = repairReferences(file)
   // After the repair, not before: a record that is about to be dropped must not be able to
   // reject the document it is no longer part of.
   assertUniqueFileNames(repaired.file)
@@ -592,20 +600,58 @@ function repairReferences(file: ProjectFile): { file: ProjectFile; repairs: Proj
     return { ...capture, relevance: kept }
   })
 
-  if (droppedDialogues === 0 && droppedZones === 0 && questDialogueIds === 0 && relevance === 0 && dialogueReferences === 0) {
-    return { file, repairs: { kind: 'none' } }
-  }
+  // After the drop pass, never before: a half-edge whose other end is a dangling id must go with
+  // it rather than pull it back in.
+  const symmetric = symmetrizeReferences(dialogues)
+
+  const nothingDropped =
+    droppedDialogues === 0 &&
+    droppedZones === 0 &&
+    questDialogueIds === 0 &&
+    relevance === 0 &&
+    dialogueReferences === 0
+  if (nothingDropped && symmetric === dialogues) return { file, repairs: { kind: 'none' } }
   return {
-    file: { ...file, dialogues, zones, quests, pendingCaptures },
-    repairs: {
-      kind: 'repaired',
-      dialogues: droppedDialogues,
-      zones: droppedZones,
-      questDialogueIds,
-      relevance,
-      dialogueReferences,
-    },
+    file: { ...file, dialogues: symmetric, zones, quests, pendingCaptures },
+    repairs: nothingDropped
+      ? { kind: 'none' }
+      : {
+          kind: 'repaired',
+          dialogues: droppedDialogues,
+          zones: droppedZones,
+          questDialogueIds,
+          relevance,
+          dialogueReferences,
+        },
   }
+}
+
+/**
+ * Restores the other half of every stored edge — the invariant `Dialogue.references` declares.
+ * A V11 document wrote the edge on one side only, and a hand edit can do the same; the missing
+ * half is added rather than the edge dropped, since one written half is unambiguous evidence the
+ * link was meant. Deliberately not counted in `ProjectRepairs`, which reports what was lost.
+ */
+function symmetrizeReferences(dialogues: Dialogue[]): Dialogue[] {
+  const incoming = new Map<DialogueId, DialogueId[]>()
+  for (const dialogue of dialogues) {
+    for (const id of dialogue.references) {
+      const sources = incoming.get(id)
+      if (sources === undefined) incoming.set(id, [dialogue.id])
+      else sources.push(dialogue.id)
+    }
+  }
+
+  let added = 0
+  const symmetric = dialogues.map((dialogue) => {
+    const missing = (incoming.get(dialogue.id) ?? []).filter(
+      (id) => !dialogue.references.includes(id),
+    )
+    if (missing.length === 0) return dialogue
+    added += missing.length
+    return { ...dialogue, references: [...dialogue.references, ...missing] }
+  })
+  return added === 0 ? dialogues : symmetric
 }
 
 /**
@@ -642,6 +688,23 @@ function assertUniqueFileNames(file: ProjectFile): void {
 }
 
 function readCurrentProjectFile(raw: Record<string, unknown>): ProjectFile {
+  return { ...readDocumentBody(raw), schemaVersion: 12 }
+}
+
+/**
+ * V11 and V12 hold the same fields — the cut changed an invariant, not a shape: `references` was
+ * directed there and is symmetric here. So the frozen reader is the shared body plus the old
+ * version number, and the step forward is `repairReferences` filling in every missing half.
+ */
+function readProjectFileV11(raw: Record<string, unknown>): ProjectFileV11 {
+  return { ...readDocumentBody(raw), schemaVersion: 11 }
+}
+
+function migrateV11(file: ProjectFileV11): ProjectFile {
+  return { ...file, schemaVersion: 12 }
+}
+
+function readDocumentBody(raw: Record<string, unknown>): Omit<ProjectFile, 'schemaVersion'> {
   const relevanceTags = readUniqueArray(raw, 'relevanceTags', readRelevanceTag)
   const tagOrder = relevanceTags.map((tag) => tag.id)
   const dialogues = readArray(raw.dialogues, 'dialogues').map((item, index) =>
@@ -652,7 +715,6 @@ function readCurrentProjectFile(raw: Record<string, unknown>): ProjectFile {
     readPendingCapture(item, path, tagOrder),
   )
   return {
-    schemaVersion: 11,
     projectName: readString(raw.projectName, 'projectName'),
     savedAt: readInstant(raw.savedAt, 'savedAt'),
     zones: readUniqueArray(raw, 'zones', readZone),

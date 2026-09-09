@@ -712,7 +712,7 @@ describe('reduce: dialogue actions', () => {
 })
 
 describe('reduce: dialogue/reference-added and dialogue/reference-removed', () => {
-  it('adds a reference from one dialogue to another', () => {
+  it('writes both halves of the link, so neither end can disagree with the other', () => {
     const next = readyOf(
       reduce(ready(twoMapProject()), {
         kind: 'dialogue/reference-added',
@@ -721,9 +721,10 @@ describe('reduce: dialogue/reference-added and dialogue/reference-removed', () =
       }),
     )
     expect(next.project.dialogues[0].references).toEqual([asDialogueId('dialogue-forest')])
+    expect(next.project.dialogues[1].references).toEqual([asDialogueId('dialogue-harbour')])
   })
 
-  it('removes a reference', () => {
+  it('removes both halves, whichever end the removal names', () => {
     const state = readyOf(
       reduce(ready(twoMapProject()), {
         kind: 'dialogue/reference-added',
@@ -734,11 +735,12 @@ describe('reduce: dialogue/reference-added and dialogue/reference-removed', () =
     const next = readyOf(
       reduce(state, {
         kind: 'dialogue/reference-removed',
-        dialogueId: asDialogueId('dialogue-harbour'),
-        referenceId: asDialogueId('dialogue-forest'),
+        dialogueId: asDialogueId('dialogue-forest'),
+        referenceId: asDialogueId('dialogue-harbour'),
       }),
     )
     expect(next.project.dialogues[0].references).toEqual([])
+    expect(next.project.dialogues[1].references).toEqual([])
   })
 
   it('refuses a self-reference', () => {
@@ -1750,6 +1752,27 @@ describe('reduce: dialogue/merged', () => {
     const withThird = ready({ ...state.project, dialogues: [...state.project.dialogues, third] })
     const next = readyOf(reduce(withThird, merge))
     expect(next.project.dialogues.find((d) => d.id === asDialogueId('three'))?.references).toEqual([asDialogueId('one')])
+  })
+
+  it('keeps a link symmetric across the merge that repointed it', () => {
+    const map = gameMap('map-1')
+    const third: Dialogue = { ...dialogue('three', map.id), references: [asDialogueId('two')] }
+    const state = split()
+    const linked = ready({
+      ...state.project,
+      dialogues: [
+        state.project.dialogues[0],
+        { ...state.project.dialogues[1], references: [asDialogueId('three')] },
+        third,
+      ],
+    })
+    const next = readyOf(reduce(linked, merge))
+    expect(next.project.dialogues.find((d) => d.id === asDialogueId('one'))?.references).toEqual([
+      asDialogueId('three'),
+    ])
+    expect(next.project.dialogues.find((d) => d.id === asDialogueId('three'))?.references).toEqual([
+      asDialogueId('one'),
+    ])
   })
 
   it('is one undo step, and brings both lines back', () => {

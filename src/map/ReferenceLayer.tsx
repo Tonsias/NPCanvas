@@ -5,7 +5,6 @@ import { CanvasLineLayer } from './CanvasLineLayer.tsx'
 import type { PinDragPreview } from './PinLayer.tsx'
 import { mapLocalToCanvas, mapsBounds } from './canvas-layout.ts'
 import { referenceEdges } from './reference-path.ts'
-import { segmentArrow } from './trail-path.ts'
 
 // Drawn in canvas space, like the trail, for the same reason: an edge can join two lines on two
 // different map images. Deliberately not culled against the visible rect — a segment with both
@@ -57,11 +56,8 @@ export const ReferenceLayer = memo(function ReferenceLayer({
 
   if (shown.length === 0 || bounds === null) return null
 
-  const arrows = shown.flatMap((edge) => {
-    const arrow = segmentArrow(edge.fromPoint, edge.toPoint)
-    return arrow === null ? [] : [arrow]
-  })
-
+  // No arrowhead, unlike the trail: a link is symmetric, and a head would claim a direction the
+  // document does not have.
   return (
     <CanvasLineLayer
       classPrefix="reference-layer"
@@ -86,7 +82,6 @@ export const ReferenceLayer = memo(function ReferenceLayer({
           y2={edge.toPoint.y}
         />
       ))}
-      arrows={arrows}
     />
   )
 })

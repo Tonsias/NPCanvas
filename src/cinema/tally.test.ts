@@ -138,4 +138,22 @@ describe('journeyTally', () => {
     expect(at.zonesVisited.size).toBe(2)
     expect(at.npcsMet).toEqual(new Set(['Mara', 'Oak']))
   })
+
+  it('counts a symmetric link once, at the later of its two ends', () => {
+    const reel = reelOf([
+      { id: 'a', references: ['c'] },
+      { id: 'b' },
+      { id: 'c', references: ['a'] },
+    ])
+    const tallies = journeyTally(reel, TAGS)
+    expect(journeyAt(tallies, 0)!.referencesMade).toBe(0)
+    expect(journeyAt(tallies, 1)!.referencesMade).toBe(0)
+    expect(journeyAt(tallies, 2)!.referencesMade).toBe(1)
+  })
+
+  it('leaves a link to a line the playhead has not reached uncounted', () => {
+    const reel = reelOf([{ id: 'a', references: ['z'] }, { id: 'b' }])
+    const tallies = journeyTally(reel, TAGS)
+    expect(journeyAt(tallies, 1)!.referencesMade).toBe(0)
+  })
 })

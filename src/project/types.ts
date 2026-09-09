@@ -70,7 +70,11 @@ export type Dialogue = {
   spokenAt: string
   /** Deduplicated, stored in `project.relevanceTags` order. */
   relevance: RelevanceTagId[]
-  /** Other lines this one points at — untyped, directed, stored. */
+  /**
+   * Other lines this one is linked to — untyped and symmetric: if A lists B, B lists A. The
+   * reducer writes both sides of every add and remove, and `readProjectFile` restores the
+   * missing half of a hand-edited one rather than dropping it.
+   */
   references: DialogueId[]
 }
 
@@ -151,7 +155,7 @@ export type Quest = {
  * versioning" — one reader for the current version, at most one migration step back.
  */
 export type ProjectFile = {
-  schemaVersion: 11
+  schemaVersion: 12
   projectName: string
   savedAt: string
   maps: GameMap[]
@@ -164,6 +168,14 @@ export type ProjectFile = {
   pendingCaptures: PendingCapture[]
   recorderBindings: RecorderBinding[]
 }
+
+/**
+ * The shape frozen at the V11 cut, read by `readProjectFileV11` and stepped forward by
+ * `migrateV11`. V12 changed an invariant rather than a field — `references` is symmetric there
+ * and was directed here — so the frozen shape is the current one with only the version differing.
+ * The next cut deletes this, its reader and its migration together.
+ */
+export type ProjectFileV11 = Omit<ProjectFile, 'schemaVersion'> & { schemaVersion: 11 }
 
 /**
  * What `parseProjectFile` had to drop to hand back a referentially whole document — counts, not

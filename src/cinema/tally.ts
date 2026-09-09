@@ -2,7 +2,7 @@ import { npcKey } from '../insights/filters.ts'
 import { emptyTally, tally } from '../insights/relevance-segments.ts'
 import type { SegmentKey, Tally } from '../insights/relevance-segments.ts'
 import { identityCache } from '../project/derived.ts'
-import type { RelevanceTag, ZoneId } from '../project/types.ts'
+import type { DialogueId, RelevanceTag, ZoneId } from '../project/types.ts'
 import type { Reel } from './reel.ts'
 
 /** What the journey has accumulated through one moment — see CLAUDE.md § "Cinema" and #162. */
@@ -14,6 +14,7 @@ export type JourneySoFar = {
   firstSeen: ReadonlyMap<SegmentKey, number>
   zonesVisited: ReadonlySet<ZoneId>
   npcsMet: ReadonlySet<string>
+  /** Links whose two ends have both played, counted once — `references` is symmetric. */
   referencesMade: number
   /** Summed within sittings only — play time, not wall-clock. */
   playedMs: number
@@ -25,6 +26,7 @@ function journeyTallyUncached(reel: Reel, tags: readonly RelevanceTag[]): readon
   const firstSeen = new Map<SegmentKey, number>()
   const zonesVisited = new Set<ZoneId>()
   const npcsMet = new Set<string>()
+  const played = new Set<DialogueId>()
   let frames = 0
   let referencesMade = 0
   let playedMs = 0
@@ -41,7 +43,11 @@ function journeyTallyUncached(reel: Reel, tags: readonly RelevanceTag[]): readon
 
     if (moment.zoneId !== null) zonesVisited.add(moment.zoneId)
     npcsMet.add(npcKey(dialogue))
-    referencesMade += dialogue.references.length
+    // Counted at the later of a link's two ends, which is the moment the link first exists within
+    // the journey — and the only way to count a symmetric edge exactly once, the same rule
+    // CinemaBand draws its arcs by.
+    played.add(dialogue.id)
+    referencesMade += dialogue.references.filter((id) => played.has(id)).length
     frames += dialogue.media.length
     if (previousSessionIndex === moment.sessionIndex) playedMs += moment.gapMsBefore
     previousSessionIndex = moment.sessionIndex

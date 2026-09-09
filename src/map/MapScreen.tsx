@@ -309,7 +309,7 @@ export function MapScreen({
     })
   }, [currentCapture, selectedSuggestion, precomputed, nextCapture, project.maps, project.dialogues])
   // Auto-cancels rather than leaving a dangling arm: closing the panel or selecting elsewhere
-  // means there is no longer a "points at" list on screen for a resolved click to land in.
+  // means there is no longer a "linked lines" list on screen for a resolved click to land in.
   useEffect(() => {
     if (tool.kind !== 'pick-reference') return
     if (selection.kind === 'dialogue' && selection.id === tool.dialogueId) return
