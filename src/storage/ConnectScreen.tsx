@@ -15,7 +15,7 @@ export function ConnectScreen({ state }: { state: ConnectState }): ReactElement 
   switch (state.kind) {
     case 'unsupported':
       return (
-        <Panel title="Unsupported browser">
+        <Panel title="Unsupported browser" flag="Unsupported browser">
           <p className="lead-text">
             NPCanvas keeps your project in a folder on disk using the File System Access API,
             which only Chromium-based browsers implement. Open this page in Chrome or Edge.
@@ -30,7 +30,8 @@ export function ConnectScreen({ state }: { state: ConnectState }): ReactElement 
 
     case 'disconnected':
       return (
-        <Panel title="NPCanvas">
+        // The wordmark above the headline already says NPCanvas; the headline says the task.
+        <Panel title="Pick a project folder">
           <p className="lead-text">
             Pick a project folder. NPCanvas reads and writes <code>data.json</code> and a{' '}
             <code>media/</code> subfolder inside it, and nothing outside it.
@@ -102,11 +103,33 @@ export function ConnectScreen({ state }: { state: ConnectState }): ReactElement 
   }
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }): ReactElement {
+function Panel({
+  title,
+  flag,
+  children,
+}: {
+  title: string
+  /** A danger-hued chip above the headline, for the one state that is not a way forward. */
+  flag?: string
+  children: ReactNode
+}): ReactElement {
   return (
     <main className="connect">
-      <h1 className="fatal-title">{title}</h1>
-      {children}
+      {/* Decoration, and named as such: the headline below is what the screen actually says. */}
+      <div className="connect__shapes" aria-hidden="true">
+        <span className="connect__shape connect__shape--sage" />
+        <span className="connect__shape connect__shape--warm" />
+        <span className="connect__shape connect__shape--ring" />
+      </div>
+      <div className="connect__content">
+        <p className="connect__mark">
+          <span className="connect__mark-dot" aria-hidden="true" />
+          NPCanvas
+        </p>
+        {flag !== undefined && <p className="connect__flag micro-label">{flag}</p>}
+        <h1 className="fatal-title">{title}</h1>
+        {children}
+      </div>
     </main>
   )
 }

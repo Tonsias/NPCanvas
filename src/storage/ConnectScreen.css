@@ -1,27 +1,115 @@
 /* The app's front door, rendered with no shell around it — so centering is this element's own
    job. `min-height` rather than `height`: a viewport too short for the panel still lets it grow
-   past 100dvh and the page scroll to it, instead of clipping. */
+   past 100dvh and the page scroll to it, instead of clipping. Full bleed, left-aligned: this is
+   the one screen with nothing else on it, and a centred column in the middle of a wide window
+   reads as a dialog rather than as a place. */
 .connect {
+  position: relative;
   min-height: 100dvh;
-  max-width: 34rem;
-  margin: 0 auto;
+  overflow: hidden;
   padding: var(--space-7) var(--space-5);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
+}
+
+/* Three soft shapes, no image and no meaning — `aria-hidden` in the markup for the same reason. */
+.connect__shapes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.connect__shape {
+  position: absolute;
+  border-radius: var(--radius-round);
+}
+
+.connect__shape--sage {
+  top: -14rem;
+  right: -10rem;
+  width: 38rem;
+  height: 38rem;
+  background: var(--accent-2-soft);
+}
+
+.connect__shape--warm {
+  bottom: -12rem;
+  left: -8rem;
+  width: 26rem;
+  height: 26rem;
+  opacity: 0.7;
+  background: var(--accent-soft);
+}
+
+.connect__shape--ring {
+  bottom: 6rem;
+  right: 14rem;
+  width: 14rem;
+  height: 14rem;
+  border: 1px dashed var(--border-strong);
+}
+
+.connect__content {
+  position: relative;
+  max-width: 40rem;
+  margin-left: min(7.5rem, 8vw);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-4);
 }
 
-/* `.fatal-title` and `.lead-text` (index.css) replace the old `.connect__title`/`__lead`. */
+/* The same mark and wordmark the spine wears, at the size a front door wants. */
+.connect__mark {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+}
 
+.connect__mark-dot {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-round);
+  background:
+    radial-gradient(circle at 50% 38%, var(--surface-0) 0 6.5px, transparent 6.5px),
+    var(--accent);
+}
+
+/* The one state that is not a way forward says so before the headline does. */
+.connect__flag {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-round);
+  background: var(--danger);
+  color: var(--ink-on-hue);
+}
+
+/* `.fatal-title` and `.lead-text` (index.css) supply the headline and the paragraph under it. */
+
+/* The honest reason there is no export fallback, and the honest limit on folder access — a well
+   rather than a rule, since it is a fact about the app rather than an aside about the sentence
+   above it. */
 .connect__note {
   margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-2);
+  background: var(--surface-well);
   font-size: var(--text-sm);
   color: var(--text-muted);
-  border-left: 2px solid var(--border-strong);
-  padding-left: var(--space-3);
+}
+
+/* The two paths named in the disconnected copy, as the pills they are on disk. */
+.connect code {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  background: var(--surface-well);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text);
 }
 
 /* `.message-box` (index.css) replaces the old `.connect__error`. */
-
