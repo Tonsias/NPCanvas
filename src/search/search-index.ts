@@ -1,6 +1,7 @@
 import { npcLabel } from '../insights/filters.ts'
 import { zoneLabel } from '../dialogue-row/dialogue-summary.ts'
 import { dialogueSearchTexts, npcLineCounts } from '../project/derived.ts'
+import { getPreferences } from '../settings/preferences.ts'
 import type { Dialogue, ProjectFile, Quest, Zone } from '../project/types.ts'
 
 /** One hit, still carrying the record it came from — the palette reads what it needs to render
@@ -16,9 +17,6 @@ type SearchOutcome = {
   /** How many more matched beyond the cap — `0` when nothing was cut. */
   hiddenCount: number
 }
-
-/** Past this many results the palette stops being scannable at a glance. */
-const SEARCH_RESULT_LIMIT = 30
 
 const EMPTY_OUTCOME: SearchOutcome = { results: [], hiddenCount: 0 }
 
@@ -55,9 +53,10 @@ export function searchProject(project: ProjectFile, query: string): SearchOutcom
     .map((zone) => ({ kind: 'zone', zone }))
 
   const all = [...dialogues, ...npcs, ...quests, ...zones]
+  const limit = getPreferences().searchResultLimit
   return {
-    results: all.slice(0, SEARCH_RESULT_LIMIT),
-    hiddenCount: Math.max(0, all.length - SEARCH_RESULT_LIMIT),
+    results: all.slice(0, limit),
+    hiddenCount: Math.max(0, all.length - limit),
   }
 }
 

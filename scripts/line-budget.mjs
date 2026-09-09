@@ -37,15 +37,16 @@ const CEILINGS = new Map([
   ['media', { ceiling: 850, note: '~160 lines of headroom' }],
   ['search', { ceiling: 700, note: '~150 lines of headroom' }],
   ['dialogue-row', { ceiling: 450, note: '~140 lines of headroom — one shared row/picker' }],
-  // Bumped by the theme switch: settings is where a device-scoped preference lands, and the
-  // one it gained needed a resolver, a store and a control. Nothing else was near the ceiling.
-  ['settings', { ceiling: 460, note: '~60 lines of headroom' }],
+  // Bumped again where the theme switch first bumped it: settings became the home for every
+  // device-scoped preference, not just the ground — a declared field table, a store, a row
+  // control, and tabs to keep the project's own vocabulary apart from this machine's tuning.
+  ['settings', { ceiling: 1000, note: '~140 lines of headroom — tabs and the preference table' }],
   ['(root)', { ceiling: 1100, note: '~170 lines of headroom — files with no feature directory' }],
 ]);
 
 // The sum of the ceilings above, checked separately so a reader sees the milestone's own
 // promise (src/ stays well under its pre-M21 size) rather than only per-directory numbers.
-const TOTAL_CEILING = 40700;
+const TOTAL_CEILING = 41240;
 
 function listSourceFiles(dir) {
   const out = [];

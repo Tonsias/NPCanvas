@@ -39,6 +39,7 @@ import type { Rect, Size } from './geometry.ts'
 import { inflate, translatePolygon } from './geometry.ts'
 import { MapImage } from './MapImage.tsx'
 import { mapGroupStyle } from './map-group-style.ts'
+import { getPreferences, usePreference } from '../settings/preferences.ts'
 import { isTextFieldFocused } from '../text-field-focus.ts'
 import type { MapDragApi, MapDragPreview } from './use-map-drag.ts'
 import { useMapDrag } from './use-map-drag.ts'
@@ -66,11 +67,11 @@ const CULL_MARGIN = 0.15
 
 const EMPTY_VIEWPORT: Viewport = { x: 0, y: 0, scale: 1 }
 
-const SCALE_STEP = 1.25
-
-// Below this zoom, a pin's label is more likely than not to overlap its neighbour's — see #95,
-// measured against overlapping labels at 13% `Fit` zoom in the test project.
-const PIN_LABEL_ZOOM_THRESHOLD = 0.5
+// A factor, from the player's own `zoomStepPercent` — read at the moment of the press rather
+// than passed down, so a handler bound long before never holds a stale step.
+function scaleStep(): number {
+  return getPreferences().zoomStepPercent / 100
+}
 
 const NOTICE_MS = 4000
 
@@ -379,6 +380,8 @@ export function MapCanvas({
       onViewportChange,
       onVisibleRectChange,
     })
+  // A percentage in settings, a zoom scale here — the one place the two units meet.
+  const pinLabelZoom = usePreference('pinLabelZoomPercent') / 100
   // Drives will-change on the world element for a gesture that repaints every frame (pan, map
   // drag, zone drag) and no longer — see .map-canvas[data-panning] in MapCanvas.css.
   const [panning, setPanning] = useState(false)
@@ -498,7 +501,7 @@ export function MapCanvas({
       onPointerCancel={onPointerCancel}
       onContextMenu={(event) => event.preventDefault()} // else a mid-gesture menu leaves the press hanging
     >
-      <div className="map-canvas__world" {...worldStyle(viewport)}>
+      <div className="map-canvas__world" {...worldStyle(viewport, pinLabelZoom)}>
         {maps.map((map) => (
           <MapImage
             key={map.id}
@@ -532,7 +535,7 @@ export function MapCanvas({
             className="map-canvas__reset button"
             aria-label="Zoom out"
             title="Zoom out (−)"
-            onClick={() => zoomByFactor(1 / SCALE_STEP)}
+            onClick={() => zoomByFactor(1 / scaleStep())}
           >
             −
           </button>
@@ -549,7 +552,7 @@ export function MapCanvas({
             className="map-canvas__reset button"
             aria-label="Zoom in"
             title="Zoom in (+)"
-            onClick={() => zoomByFactor(SCALE_STEP)}
+            onClick={() => zoomByFactor(scaleStep())}
           >
             +
           </button>
@@ -803,12 +806,12 @@ function handleCanvasKeyDown(
     case '+':
     case '=':
       event.preventDefault()
-      zoomByFactor(SCALE_STEP)
+      zoomByFactor(scaleStep())
       return
 
     case '-':
       event.preventDefault()
-      zoomByFactor(1 / SCALE_STEP)
+      zoomByFactor(1 / scaleStep())
       return
 
     case '0':
@@ -847,7 +850,7 @@ function handleCanvasKeyDown(
 // --map-zoom lets pins counter-scale in CSS against one custom property instead of N per-element
 // updates (#10); data-pin-labels rides beside it for the same reason — PinLayer takes no
 // viewport-derived prop, so the label threshold reaches it via attribute, not a prop.
-function worldStyle(viewport: Viewport): {
+function worldStyle(viewport: Viewport, pinLabelZoom: number): {
   style: CSSProperties & Record<'--map-zoom', string>
   'data-pin-labels'?: 'hidden'
 } {
@@ -857,7 +860,7 @@ function worldStyle(viewport: Viewport): {
       transform: `scale(${viewport.scale}) translate(${-viewport.x}px, ${-viewport.y}px)`,
       '--map-zoom': String(viewport.scale),
     },
-    'data-pin-labels': viewport.scale < PIN_LABEL_ZOOM_THRESHOLD ? 'hidden' : undefined,
+    'data-pin-labels': viewport.scale < pinLabelZoom ? 'hidden' : undefined,
   }
 }
 
@@ -873,7 +876,7 @@ function MapScaleControl({ map }: { map: GameMap }): ReactElement {
         className="map-canvas__reset button"
         aria-label={`Shrink ${map.name}`}
         disabled={clampMapScale(map.scale) <= MIN_MAP_SCALE}
-        onClick={() => rescale(1 / SCALE_STEP)}
+        onClick={() => rescale(1 / scaleStep())}
       >
         −
       </button>
@@ -883,7 +886,7 @@ function MapScaleControl({ map }: { map: GameMap }): ReactElement {
         className="map-canvas__reset button"
         aria-label={`Enlarge ${map.name}`}
         disabled={clampMapScale(map.scale) >= MAX_MAP_SCALE}
-        onClick={() => rescale(SCALE_STEP)}
+        onClick={() => rescale(scaleStep())}
       >
         +
       </button>

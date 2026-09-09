@@ -11,6 +11,7 @@ import type {
   PendingCapture,
   PendingCaptureId,
 } from '../project/types.ts'
+import { getPreferences } from '../settings/preferences.ts'
 import { describeError } from '../storage/project-directory.ts'
 import { isTextFieldFocused } from '../text-field-focus.ts'
 import { activeCaptureProfile } from './active-profile.ts'
@@ -63,16 +64,17 @@ type HeldReplay = {
 // Matches `frameRate: { ideal: 20 }` in `connectCaptureSource`; faster re-reads the same frame.
 const POLL_MS = 50
 
-// Three ticks at 50ms, a 150 ms window. Safe only because Gen 1's fastest text speed prints a
-// character about every 17 ms: three identical reads then mean a box that stopped, not one still
-// typing. At the slowest speed a character holds ~100 ms and this would settle mid-sentence.
-const SETTLE_TICKS = 3
+// The default 150 ms window is three ticks at 50 ms. Safe only because Gen 1's fastest text
+// speed prints a character about every 17 ms: three identical reads then mean a box that
+// stopped, not one still typing — a slower text speed needs a wider window, which is why the
+// player sets it (`captureSettleMs`) rather than this file.
+function settleTicks(): number {
+  return Math.max(1, Math.round(getPreferences().captureSettleMs / POLL_MS))
+}
 
 // A single hiccup shouldn't end a conversation, but a minimised window stops producing frames for good.
 const FAILURES_BEFORE_STOP = 3
 
-// The oldest is dropped past this — the newest frames are the ones the player can still remember.
-const HELD_LIMIT = 24
 
 const OFF: WatchState = { kind: 'off', message: null }
 const NOTHING_HELD: HeldState = { waiting: 0, dropped: 0 }
@@ -284,7 +286,7 @@ async function tick(mine: number): Promise<void> {
   const reading = await readBox(frame, profile, glyphs)
   // A reply arriving after a stop/start/profile switch bumped the session must not be acted on.
   if (mine !== session) return
-  const step = nextSettle(settle, boxReadingFrom(reading), SETTLE_TICKS)
+  const step = nextSettle(settle, boxReadingFrom(reading), settleTicks())
   settle = step.state
   markRead()
 
@@ -466,7 +468,8 @@ function bump(counter: 'repeated' | 'dropped' | 'appended' | 'conversations', la
 function hold(captureId: PendingCaptureId, frame: ImageData): void {
   heldFrames.push({ captureId, frame })
   let dropped = held.dropped
-  while (heldFrames.length > HELD_LIMIT) {
+  // The oldest is dropped past the limit — the newest frames are the ones the player can still remember.
+  while (heldFrames.length > getPreferences().heldFrameLimit) {
     heldFrames.shift()
     dropped += 1
   }

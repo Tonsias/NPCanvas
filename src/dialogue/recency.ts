@@ -1,7 +1,6 @@
 import { byTimeDesc, dialoguesByTimeDesc } from './dialogue-order.ts'
+import { getPreferences } from '../settings/preferences.ts'
 import type { Dialogue } from '../project/types.ts'
-
-const RECENT_NPC_LIMIT = 5
 
 // The most-recently-spoken NPCs lead the list, then everyone else alphabetically — while
 // playing, the next line is usually one of the last few people talked to.
@@ -15,8 +14,9 @@ export function npcNamesIn(dialogues: readonly Dialogue[]): string[] {
     seen.add(trimmed)
     ordered.push(trimmed)
   }
-  const recent = ordered.slice(0, RECENT_NPC_LIMIT)
-  const rest = ordered.slice(RECENT_NPC_LIMIT).sort((a, b) => a.localeCompare(b))
+  const limit = getPreferences().recentNpcLimit
+  const recent = ordered.slice(0, limit)
+  const rest = ordered.slice(limit).sort((a, b) => a.localeCompare(b))
   return [...recent, ...rest]
 }
 

@@ -21,20 +21,111 @@
 
 /* `.screen-title` (index.css) replaces the old `.settings__title`. */
 
-/* The vocabulary and the shortcuts on the left, the capture rig on the right: one column is what
-   the project owns, the other is the machine that reads it. Stacked wherever the two do not fit,
-   which is the same width the shortcut grid stops being two columns at. */
-.settings__columns {
-  display: grid;
-  grid-template-columns: 23.75rem minmax(0, 1fr);
-  gap: var(--space-3);
-  align-items: start;
+/* One subject at a time, so the tabs are the screen's only navigation and the panel below them
+   never scrolls past a second one. `.nav__link` is the app's other row of this shape, but it
+   carries the whole app's views — this one stays quieter than that on purpose. */
+.settings__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
 }
 
-@media (max-width: 72rem) {
-  .settings__columns {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.settings__tab {
+  font: inherit;
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  min-height: var(--control-height);
+  padding: var(--space-1) var(--space-3);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-round);
+  cursor: pointer;
+}
+
+.settings__tab:hover {
+  color: var(--text);
+  background: var(--surface-well);
+}
+
+.settings__tab[aria-selected='true'] {
+  color: var(--accent-ink);
+  background: var(--surface-well);
+}
+
+.settings__tab:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.settings__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* What the open tab owns, in one line — the panels below it state their own subject, not who
+   keeps it. */
+.settings__lede {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* ---- preference rows ---- */
+
+.preference-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* The number sits beside its name and above its explanation: the row reads as one sentence
+   whatever the panel's width, and the hint stays out of the label's column. */
+.preference-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+
+.preference-row__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.preference-row__control {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+/* Wide enough for four digits plus the spinner Chromium draws inside the field. */
+.preference-row__input {
+  width: 6.5rem;
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.preference-row__unit {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.preference-row__hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+/* Only the value that moved is worth naming — the default is noise beside a row still at it. */
+.preference-row__default {
+  color: var(--accent-ink);
+}
+
+.preference-list__reset {
+  align-self: flex-start;
 }
 
 /* `.panel` (index.css) supplies the border/surface; this is only the layout. */
@@ -175,6 +266,17 @@
   .settings__shortcut-groups {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* The same reasoning one panel down: a preference row is a short label and a number. */
+  .preference-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4) var(--space-5);
+  }
+
+  .preference-list__reset {
+    grid-column: 1 / -1;
   }
 }
 

@@ -1,6 +1,7 @@
 import { dialoguesByTimeAsc } from '../dialogue/dialogue-order.ts'
 import { indexDialoguesByZone } from '../map/zone-index.ts'
-import { identityCache } from '../project/derived.ts'
+import { getPreferences } from '../settings/preferences.ts'
+import type { Preferences } from '../settings/preferences.ts'
 import type { Dialogue, ProjectFile, ZoneId } from '../project/types.ts'
 
 /** One line, placed on the reel's own ordinal axis — see CLAUDE.md § "Cinema". */
@@ -17,7 +18,7 @@ export type Moment = {
   dwellMs: number
 }
 
-/** A run of moments with no gap between consecutive lines exceeding `SESSION_GAP_MS`. */
+/** A run of moments with no gap between consecutive lines exceeding `sessionGapMinutes`. */
 export type Session = {
   index: number
   firstMoment: Moment
@@ -31,12 +32,9 @@ export type Reel = {
   sessions: Session[]
 }
 
-// A gap this long reads as "the player put the controller down", not a pause in one sitting.
-const SESSION_GAP_MS = 30 * 60_000
-
-// dwellMs constants, declared together so the formula below has nothing spelled inline.
+// The per-character term is the player's (`readingMsPerChar`); the floor and ceiling stay the
+// app's, since they only keep the result inside what a stage can show.
 const BASE_MS = 800
-const MS_PER_CHAR = 40
 const MIN_DWELL_MS = 1500
 const MAX_DWELL_MS = 12_000
 
@@ -44,12 +42,13 @@ const MAX_DWELL_MS = 12_000
 // frames a moment has, so a fifty-frame moment doesn't flip faster than a three-frame one.
 export const MS_PER_FRAME = 300
 
-function dwellFor(dialogue: Dialogue): number {
-  const raw = BASE_MS + dialogue.text.length * MS_PER_CHAR + dialogue.media.length * MS_PER_FRAME
+function dwellFor(dialogue: Dialogue, msPerChar: number): number {
+  const raw = BASE_MS + dialogue.text.length * msPerChar + dialogue.media.length * MS_PER_FRAME
   return Math.min(MAX_DWELL_MS, Math.max(MIN_DWELL_MS, raw))
 }
 
-function buildReelUncached(project: ProjectFile): Reel {
+function buildReelUncached(project: ProjectFile, preferences: Preferences): Reel {
+  const sessionGapMs = preferences.sessionGapMinutes * 60_000
   const ordered = dialoguesByTimeAsc(project.dialogues)
   const zoneIndex = indexDialoguesByZone(project.dialogues, project.zones, project.maps)
 
@@ -64,7 +63,7 @@ function buildReelUncached(project: ProjectFile): Reel {
     const gapMsBefore = previousAt === null ? 0 : at - previousAt
     previousAt = at
 
-    const startsSession = sessions.length === 0 || gapMsBefore > SESSION_GAP_MS
+    const startsSession = sessions.length === 0 || gapMsBefore > sessionGapMs
     const sessionIndex = startsSession ? sessions.length : sessions.length - 1
 
     const moment: Moment = {
@@ -73,7 +72,7 @@ function buildReelUncached(project: ProjectFile): Reel {
       sessionIndex,
       gapMsBefore,
       zoneId: (zoneIndex.get(dialogue.id) ?? [])[0] ?? null,
-      dwellMs: dwellFor(dialogue),
+      dwellMs: dwellFor(dialogue, preferences.readingMsPerChar),
     }
     moments.push(moment)
 
@@ -87,5 +86,16 @@ function buildReelUncached(project: ProjectFile): Reel {
   return { moments, sessions }
 }
 
-/** Pure over the document; cached on `project`'s own identity — see CLAUDE.md § "Store scope". */
-export const buildReel = identityCache(buildReelUncached)
+// Not `identityCache`: the reel is pure over the document *and* the player's pacing, two inputs.
+let cached: { project: ProjectFile; preferences: Preferences; reel: Reel } | null = null
+
+/** Pure over the document and the reading preferences — see CLAUDE.md § "Store scope". */
+export function buildReel(project: ProjectFile): Reel {
+  const preferences = getPreferences()
+  if (cached !== null && cached.project === project && cached.preferences === preferences) {
+    return cached.reel
+  }
+  const reel = buildReelUncached(project, preferences)
+  cached = { project, preferences, reel }
+  return reel
+}
