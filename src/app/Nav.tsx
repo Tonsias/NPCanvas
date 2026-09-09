@@ -22,9 +22,11 @@ const NAV_ITEMS: readonly { label: string; route: Route }[] = [
 
 export function Nav({
   directoryName,
+  onOpenSearch,
   onReviewSaveFailure,
 }: {
   directoryName: string
+  onOpenSearch: () => void
   // Reopens a save-failure banner the user dismissed, so dismissing it doesn't lose the retry.
   onReviewSaveFailure: () => void
 }): ReactElement {
@@ -34,6 +36,8 @@ export function Nav({
   const history = useHistoryState()
   return (
     <nav className="nav" aria-label="Views">
+      {/* A pin seen from above — decorative, so the wordmark beside it is the accessible name. */}
+      <span className="nav__mark" aria-hidden="true" />
       <span className="nav__brand">NPCanvas</span>
       <ul className="nav__list">
         {NAV_ITEMS.map((item) => (
@@ -49,6 +53,11 @@ export function Nav({
         ))}
       </ul>
       {history !== null && <HistoryControls history={history} />}
+      <button type="button" className="nav__search" onClick={onOpenSearch}>
+        <Icon name="search" />
+        <span className="nav__search-label">Search the project</span>
+        <kbd>Ctrl K</kbd>
+      </button>
       <ProjectSwitch directoryName={directoryName} />
       {/* One region for the whole session, contents swapped underneath — a live region only
           announces changes inside it, so a fresh per-state region would announce nothing. */}
@@ -116,6 +125,7 @@ function ProjectSwitch({ directoryName }: { directoryName: string }): ReactEleme
       onClick={() => void onSwitch()}
       title={`Open a different project folder — ${directoryName} is connected`}
     >
+      <Icon name="folder" />
       <span className="nav__project-name">{directoryName}</span>
       <span className="nav__project-action">Switch…</span>
     </button>

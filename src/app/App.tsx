@@ -64,6 +64,7 @@ function ReadyScreen({ state }: { state: ReadyState }): ReactElement {
     (cinema: CinemaViewState) => setViewState((prev) => ({ ...prev, cinema })),
     [],
   )
+  const [searchOpen, setSearchOpen] = useState(false)
   // The search palette can't do this itself: opening an NPC's dossier needs both routing and
   // the view state that lives here.
   const onOpenNpcDossier = useCallback((key: string) => {
@@ -76,7 +77,11 @@ function ReadyScreen({ state }: { state: ReadyState }): ReactElement {
       <a className="skip-link visually-hidden" href="#main-content">
         Skip to main content
       </a>
-      <Nav directoryName={state.directoryName} onReviewSaveFailure={() => setDismissed(null)} />
+      <Nav
+        directoryName={state.directoryName}
+        onOpenSearch={() => setSearchOpen(true)}
+        onReviewSaveFailure={() => setDismissed(null)}
+      />
       <SaveFailureBanner dismissed={dismissed} onDismiss={setDismissed} />
       {repairs !== null && (
         <RepairNotice repairs={repairs} onDismiss={() => setDismissedRepairs(repairs)} />
@@ -92,7 +97,12 @@ function ReadyScreen({ state }: { state: ReadyState }): ReactElement {
           onQuestsStateChange={onQuestsStateChange}
         />
       </main>
-      <SearchPalette project={state.project} onOpenNpcDossier={onOpenNpcDossier} />
+      <SearchPalette
+        project={state.project}
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        onOpenNpcDossier={onOpenNpcDossier}
+      />
     </div>
   )
 }

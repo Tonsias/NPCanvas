@@ -21,28 +21,25 @@ const KIND_LABEL: Record<SearchResult['kind'], string> = {
 // Mounted once from App, above the route switch, so it's never tied to the view it opened from.
 export function SearchPalette({
   project,
+  open,
+  onOpenChange,
   onOpenNpcDossier,
 }: {
   project: ProjectFile
+  // Held by App, not here: the nav's search pill opens the same palette these keys do.
+  open: boolean
+  onOpenChange: (open: boolean) => void
   // Sets the insights dossier's open NPC and navigates — this component can't touch that view
   // state, since it lives in App.
   onOpenNpcDossier: (key: string) => void
 }): ReactElement | null {
-  const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const restoreFocus = useRef<HTMLElement | null>(null)
 
-  function openPalette(): void {
-    restoreFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
-    setQuery('')
-    setActiveIndex(0)
-    setOpen(true)
-  }
-
   function closePalette(): void {
-    setOpen(false)
+    onOpenChange(false)
     restoreFocus.current?.focus()
     restoreFocus.current = null
   }
@@ -57,15 +54,21 @@ export function SearchPalette({
       if (!isModK && !isSlash) return
       if (isSlash && isTextFieldFocused()) return
       event.preventDefault()
-      openPalette()
+      onOpenChange(true)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [open])
+  })
 
-  // role="dialog" must move focus into itself to be keyboard-operable.
+  // Opening is now something a caller can do, so the reset and the focus move live here rather
+  // than in the one function that used to be the only entry point. role="dialog" must move focus
+  // into itself to be keyboard-operable; whatever had it is what closing gives it back to.
   useEffect(() => {
-    if (open) inputRef.current?.focus()
+    if (!open) return
+    restoreFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    setQuery('')
+    setActiveIndex(0)
+    inputRef.current?.focus()
   }, [open])
 
   if (!open) return null

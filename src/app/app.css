@@ -29,35 +29,59 @@
 
 /* ---- Nav ---- */
 
+/* The one border in the app that survives §Panels-are-leaves: the spine is not a leaf, it is
+   what every screen hangs off. Everything below it floats. */
 .nav {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   row-gap: var(--space-2);
-  gap: var(--space-5);
-  padding: var(--space-2) var(--space-5);
+  gap: var(--space-3);
+  min-height: 60px;
+  padding: 0 var(--space-4);
   border-bottom: 1px solid var(--border);
-  background: var(--surface-1);
+  background: var(--surface-0);
+}
+
+/* A pin seen from above: a terracotta disc with the ground punched out of it, off-centre so it
+   reads as a pin's shaft rather than a doughnut. */
+.nav__mark {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-round);
+  background:
+    radial-gradient(circle at 50% 38%, var(--surface-0) 0 4.5px, transparent 4.5px),
+    var(--accent);
 }
 
 .nav__brand {
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
+  margin-right: var(--space-2);
 }
 
+/* One well holding all five views, so the group reads as a single control rather than five
+   links that happen to sit together. Never allowed to shrink — placing yourself is the spine's
+   whole job, and it is the last thing a narrow window may take away. */
 .nav__list {
   display: flex;
-  gap: var(--space-1);
+  flex: none;
+  gap: 3px;
   margin: 0;
-  padding: 0;
+  padding: 4px;
   list-style: none;
+  border-radius: var(--radius-round);
+  background: var(--accent-2-soft);
 }
 
 .nav__link {
   display: block;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-2);
-  color: var(--text-muted);
+  padding: 6px 15px;
+  border-radius: var(--radius-round);
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  color: var(--accent-2-ink);
   text-decoration: none;
   transition:
     color var(--duration-fast) var(--ease-standard),
@@ -65,37 +89,70 @@
 }
 
 .nav__link:hover {
-  background: var(--surface-2);
   color: var(--text);
 }
 
+.nav__link[aria-current='page'] {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+/* The first item to claim the free space, which is what puts everything after it on the right. */
 .nav__history {
   display: flex;
   gap: var(--space-1);
   margin-left: auto;
 }
 
-/* Builds on the shared `.button` treatment (index.css) — only the size and the always-on text
-   colour (rather than the base's muted-until-hover) differ. */
-.nav__history-button {
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--text-xs);
-  color: var(--text);
-}
-
+/* `.button`'s icon-only ghost (index.css) supplies the shape; only the disabled fade differs. */
 .nav__history-button:disabled {
   color: var(--text-muted);
 }
 
-/* No `margin-left: auto` of its own — `.nav__history` is the first item that claims the free
-   space, and a second auto margin here would split that space instead of sitting flush after
-   it. Builds on the shared `.button` treatment (index.css) — same box, always-on text colour. */
+/* A recessed pill rather than an outlined one: this is a field you type into, not a verb. */
+.nav__search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  background: var(--surface-well);
+  border: 1px solid transparent;
+  border-radius: var(--radius-round);
+  cursor: pointer;
+}
+
+.nav__search:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.nav__search:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.nav__search kbd {
+  background: var(--accent-2-soft);
+  border-color: transparent;
+  color: var(--accent-2-ink);
+}
+
+/* No `margin-left: auto` of its own — `.nav__history` already claimed the free space, and a
+   second auto margin here would split it instead of sitting flush after it. */
 .nav__project {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
   font-size: var(--text-xs);
   color: var(--text);
+}
+
+.nav__project .icon {
+  color: var(--accent-2);
 }
 
 /* The folder can be named anything; a long one must not push the nav's own items around. */
@@ -104,10 +161,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
 }
 
 .nav__project-action {
-  color: var(--text-muted);
+  color: var(--accent-ink);
 }
 
 /* A flex child of .nav in its own right: the region is permanent, only its contents change. */
@@ -116,20 +174,34 @@
   align-items: center;
 }
 
-/* `.hint-text` (index.css) supplies the margin/colour; the size is a step up. */
+/* `.hint-text` (index.css) supplies the margin/colour. The dot is the state; the words only
+   say it again for anyone reading rather than glancing. */
 .nav__save {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: var(--text-xs);
 }
 
-/* Builds on the shared `.button` treatment (index.css) — outlined in the danger colour and
-   flatter (radius-1) rather than filled, and the danger colour survives hover. */
+.nav__save::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-round);
+  background: var(--accent-2);
+}
+
+.nav__save[data-state='pending']::before,
+.nav__save[data-state='saving']::before {
+  background: var(--warning);
+}
+
+.nav__save[data-state='failed']::before {
+  background: var(--danger);
+}
+
+/* Builds on the shared `.button` treatment (index.css) — the danger colour survives hover. */
 .nav__save-review {
   border-color: var(--danger);
-  border-radius: var(--radius-1);
-  background: transparent;
   color: var(--danger);
 }
 
@@ -137,12 +209,31 @@
    silently outranked by the base's own hover colour. */
 .nav__save-review:hover:not(:disabled) {
   color: var(--danger);
+  border-color: var(--danger);
 }
 
-.nav__link[aria-current='page'] {
-  background: var(--surface-3);
-  color: var(--text);
-  box-shadow: inset 0 -2px 0 var(--accent);
+/* Degrade rather than overflow, in the order the bar can most afford to lose: first the word
+   "Switch…", then the save time (the dot alone still says it), then the search prompt. The view
+   pills are never in this list. */
+@media (max-width: 68rem) {
+  .nav__project-action {
+    display: none;
+  }
+}
+
+@media (max-width: 60rem) {
+  .nav__save {
+    font-size: 0;
+    gap: 0;
+  }
+
+  .nav__search-label {
+    display: none;
+  }
+
+  .nav__search kbd {
+    display: none;
+  }
 }
 
 /* ---- Disclosure ---- */

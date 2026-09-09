@@ -136,6 +136,7 @@ const ICON = {
       <path d="M19 5v14" />
     </>
   ),
+  folder: <path d="M4 20a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4.5l2 3H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z" />,
 }
 
 type IconName = keyof typeof ICON
@@ -152,7 +153,7 @@ export function Icon({ name }: { name: IconName }): ReactElement {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="2.75"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"

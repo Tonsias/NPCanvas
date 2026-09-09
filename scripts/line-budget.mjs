@@ -26,7 +26,10 @@ const CEILINGS = new Map([
   ['insights', { ceiling: 3900, note: '~430 lines of headroom' }],
   ['cinema', { ceiling: 3200, note: "M22's new feature directory — room for the whole milestone" }],
   ['dialogue', { ceiling: 2700, note: '~390 lines of headroom' }],
-  ['app', { ceiling: 1850, note: '~280 lines of headroom — mostly shell chrome' }],
+  // Bumped by the UI rebuild: the spine is the one piece of chrome every screen hangs off, and
+  // it grew from a row of links into a mark, a view well, a search pill and a save state. Due
+  // for its own M21-style reset once the rebuild has landed across every screen.
+  ['app', { ceiling: 2100, note: '~165 lines of headroom — the rebuilt spine' }],
   ['storage', { ceiling: 1300, note: '~200 lines of headroom' }],
   ['quest', { ceiling: 1250, note: '~210 lines of headroom' }],
   ['media', { ceiling: 850, note: '~160 lines of headroom' }],
