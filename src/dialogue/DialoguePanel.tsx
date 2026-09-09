@@ -165,7 +165,11 @@ export function DialoguePanel({
     >
       <>
         <header className="dialogue-panel__header">
-          <h2 className="panel-title">Dialogue</h2>
+          {/* Whoever said it, not the word "Dialogue" — the panel is one line, and the line is
+              theirs. The field below is still where the name is edited. */}
+          <h2 className="panel-title dialogue-panel__npc">
+            {dialogue.npcName.trim() === '' ? 'Someone' : dialogue.npcName}
+          </h2>
           <button
             type="button"
             className="button"
@@ -176,10 +180,9 @@ export function DialoguePanel({
             <Icon name="close" />
           </button>
         </header>
-        <p className="dialogue-panel__map hint-text">on {map === null ? 'an unknown map' : map.name}</p>
-
         {/* Derived, not stored — moving the pin or the zone changes this with no write here. */}
         <p className="dialogue-panel__location">
+          <span className="dialogue-panel__map">on {map === null ? 'an unknown map' : map.name}</span>
           <ZoneChips zones={locations} nowhereClassName="dialogue-panel__nowhere" />
         </p>
 
@@ -317,7 +320,7 @@ function DialogueMediaSection({
             onSelect={onSelectMedia}
           />
           {currentIndex === 0 && (
-            <p className="dialogue-media__first">First — the pin shows this one</p>
+            <p className="dialogue-media__first">The pin shows this one</p>
           )}
           <div className="dialogue-media__controls">
             <button

@@ -87,6 +87,21 @@ export function DialogueForm({
         />
       </div>
 
+      <div className="dialogue-form__field dialogue-form__field--grow">
+        <label className="micro-label" htmlFor={`${fieldId}-text`}>
+          What was said
+        </label>
+        <textarea
+          id={`${fieldId}-text`}
+          className="dialogue-form__textarea text-input"
+          value={textDraft.value}
+          rows={8}
+          placeholder="The line, as you heard it"
+          onChange={(event) => textDraft.onChange(event.target.value)}
+          onBlur={textDraft.flush}
+        />
+      </div>
+
       <RelevancePicker
         tags={relevanceTags}
         value={dialogue.relevance}
@@ -105,21 +120,6 @@ export function DialogueForm({
           Same as the last line: {relevanceNames(previousRelevance, relevanceTags).join(', ')}
         </button>
       )}
-
-      <div className="dialogue-form__field dialogue-form__field--grow">
-        <label className="micro-label" htmlFor={`${fieldId}-text`}>
-          What was said
-        </label>
-        <textarea
-          id={`${fieldId}-text`}
-          className="dialogue-form__textarea text-input"
-          value={textDraft.value}
-          rows={8}
-          placeholder="The line, as you heard it"
-          onChange={(event) => textDraft.onChange(event.target.value)}
-          onBlur={textDraft.flush}
-        />
-      </div>
     </div>
   )
 }

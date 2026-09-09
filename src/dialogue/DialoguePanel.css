@@ -22,18 +22,24 @@
   gap: var(--space-2);
 }
 
-/* `.panel-title` (index.css) replaces the old `.dialogue-panel__title`. */
-
-/* `.hint-text` (index.css) supplies the margin/colour; the size is a step up. */
-.dialogue-panel__map {
-  font-size: var(--text-xs);
+/* `.panel-title` (index.css) supplies the reset; this is the one heading in the app that names a
+   person, so it is the one that gets the display face at full size. */
+.dialogue-panel__npc {
+  font-size: var(--text-2xl);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
+.dialogue-panel__map {
+  color: var(--text-muted);
+}
+
+/* Where it was heard, on one line: the map by name, then the zone chips the index derived. */
 .dialogue-panel__location {
   margin: 0;
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   flex-wrap: wrap;
   font-size: var(--text-xs);
 }
@@ -46,11 +52,12 @@
 
 /* `.dialogue-panel__section` (index.css) supplies the frame. */
 
-/* The frame the pin wears, said in words under it. Not muted like the hints below: which
-   picture the canvas shows is a property of the dialogue, not advice about this panel. */
+/* The frame the pin wears, said in words under it. Sage rather than muted: which picture the
+   canvas shows is a fact about the dialogue, not advice about this panel. */
 .dialogue-media__first {
   margin: 0;
   font-size: var(--text-2xs);
+  color: var(--accent-2-ink);
 }
 
 /* `.dialogue-media__controls` (index.css) supplies the layout. */
@@ -71,12 +78,19 @@
 /* The `.button` base (index.css) supplies the box, hover and focus ring; this is outlined in
    the accent colour rather than filled — the import is the primary way in until a source is
    connected, and two solid accent blocks side by side would say nothing about which to press
-   first — and the text stays full-strength rather than muted-until-hover. */
+   first. Stacked rather than shrunk beside it: neither verb survives a 14rem column. */
 .dialogue-media__capture {
+  width: 100%;
+  justify-content: center;
   font-size: var(--text-xs);
   color: var(--text);
   border-color: var(--accent);
   padding: var(--space-1) var(--space-3);
+}
+
+.dialogue-media__label.button--primary {
+  width: 100%;
+  text-align: center;
 }
 
 .dialogue-media__capture:disabled {

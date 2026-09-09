@@ -51,7 +51,9 @@
   flex: none;
   min-height: auto;
   resize: vertical;
-  line-height: 1.5;
+  line-height: 1.55;
+  /* Every other control is a pill; a box several lines tall is not one. */
+  border-radius: var(--radius-2);
 }
 
 /* ---- relevance ---- */
