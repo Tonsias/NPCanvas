@@ -418,7 +418,7 @@ body {
 /* A link inside a `.hint-text` paragraph — the empty-state "see the docs" style repeated
    identically in the dialogue panel, insights and the quest board before this rule existed. */
 .hint-text a {
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: none;
 }
 

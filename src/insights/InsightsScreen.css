@@ -56,12 +56,12 @@
   border-top: 1px solid var(--border);
 }
 
-/* `.text-input` (index.css) supplies the rest; the background sits a level darker since this
-   field lives inside the already-raised `.filter-bar` card. */
+/* `.text-input` (index.css) supplies the rest; a well, since this field lives inside the
+   already-raised `.filter-bar` panel. */
 .filter-bar__search {
   flex: 1;
   min-width: 12rem;
-  background: var(--surface-0);
+  background: var(--surface-well);
 }
 
 /* `.micro-label` and `.filter-bar__date` (index.css) supply the treatment and the layout. */
@@ -71,9 +71,19 @@
    transform/tracking the wrapping `.micro-label` puts on `.filter-bar__date`. */
 .filter-bar__date input,
 .filter-bar__select {
+  font: inherit;
   font-size: var(--text-xs);
-  background: var(--surface-0);
-  padding: var(--space-1) var(--space-2);
+  min-height: var(--control-height);
+  color: var(--text);
+  background: var(--surface-well);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-round);
+  padding: var(--space-1) var(--space-3);
+}
+
+.filter-bar__select:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 1px;
 }
 
 .filter-bar__date input {
@@ -89,26 +99,27 @@
 /* `.error-text` (index.css) replaces the old `.filter-bar__error`. `.filter-bar__chips`
    (index.css) supplies the layout. */
 
-/* `.hue-chip` (index.css) supplies the padding and pill radius. Unpressed chips are outlines of
-   their own hue, pressed ones are filled: the state has to be readable without comparing two
-   chips, since only one may be on screen at a time. */
-.filter-bar__tag,
+/* `.hue-chip` (index.css) supplies the padding and pill radius, and its own fill/ink recipe is an
+   attribute selector — so an *unpressed* chip has to answer at the same specificity to stay an
+   outline. Off is an outline on nothing, on is the hue's own fill and ink with a ring of that
+   ink: the state has to be readable without comparing two chips, since only one may be on screen
+   at a time. */
+.filter-bar__tag.hue-chip,
 .filter-bar__kind {
   font: inherit;
   font-size: var(--text-2xs);
-  color: var(--text);
+  color: var(--text-muted);
   background: none;
   border: 1px solid var(--border-strong);
   cursor: pointer;
 }
 
-.filter-bar__tag {
-  border-color: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--relevance-hue));
-}
-
-.filter-bar__tag[aria-pressed='true'] {
-  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--relevance-hue));
-  color: var(--ink-on-hue);
+.filter-bar__tag.hue-chip[aria-pressed='true'] {
+  background: oklch(var(--hue-chip-fill-l) var(--hue-chip-fill-c) var(--relevance-hue));
+  color: oklch(var(--hue-chip-ink-l) var(--hue-chip-ink-c) var(--relevance-hue));
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1.5px
+    oklch(var(--hue-chip-ink-l) var(--hue-chip-ink-c) var(--relevance-hue));
   font-weight: 600;
 }
 
@@ -120,7 +131,9 @@
 }
 
 /* `.hue-chip` (index.css) supplies the padding, pill radius, and the zone/quest/relevance fill
-   recipe for whichever `--*-hue` custom property `style` publishes. */
+   recipe for whichever `--*-hue` custom property `style` publishes. Left at a lower specificity
+   than that recipe on purpose: a filter with a hue wears it, and one without falls through to
+   the well fill here rather than inventing a colour for something that has none. */
 .filter-bar__active {
   display: inline-flex;
   align-items: center;
@@ -128,8 +141,8 @@
   font: inherit;
   font-size: var(--text-2xs);
   color: var(--text);
-  background: var(--surface-2);
-  border: 1px solid var(--border-strong);
+  background: var(--surface-well);
+  border: none;
   cursor: pointer;
 }
 
@@ -212,7 +225,7 @@
   border: 0;
   background: none;
   color: var(--text-muted);
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: var(--text-2xs);
 }
 
@@ -221,12 +234,12 @@
 }
 
 .insights__track {
-  fill: var(--surface-2);
+  fill: var(--surface-well);
 }
 
 .insights__row-label,
 .insights__row-total {
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: var(--text-2xs);
   fill: var(--text-muted);
   dominant-baseline: middle;
@@ -264,13 +277,26 @@
 
 /* ---- timeline ---- */
 
-/* The same segmented shape as the canvas's `.tool-picker`, because it is the same kind of
-   control: one mutually exclusive choice, sitting in a header rather than a form. Smaller,
-   because it shares the panel head with a title, a paragraph and a button. */
+/* One mutually exclusive choice, sitting in a header rather than a form, and sunk into a well so
+   the group reads as one control the way the nav's view pills do. */
 .grain-picker {
   display: flex;
   gap: 1px;
   margin-left: auto;
+  padding: 2px;
+  border-radius: var(--radius-round);
+  background: var(--surface-well);
+}
+
+.grain-picker__button.segmented-button {
+  border: none;
+  background: none;
+  border-radius: var(--radius-round);
+}
+
+.grain-picker__button.segmented-button[aria-checked='true'] {
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 /* The `.segmented-button` base (index.css) supplies the shape and states; only the size differs
@@ -290,7 +316,7 @@
 }
 
 .timeline__tick {
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: var(--text-2xs);
   fill: var(--text-muted);
 }
@@ -314,7 +340,10 @@
 
 .timeline__brush {
   fill: var(--accent);
-  opacity: 0.18;
+  opacity: 0.08;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
   pointer-events: none;
 }
 
@@ -360,21 +389,21 @@
   height: 0;
 }
 
+/* A hairline between the list and the dossier, not a box round the list: both are inside one
+   panel, and a second frame in there would read as a second region. */
 .npc-dossier__list {
   margin: 0;
-  padding: 0;
+  padding: 0 var(--space-2) 0 0;
   list-style: none;
   display: flex;
   flex-direction: column;
   max-height: 26rem;
   overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-2);
-  background: var(--surface-0);
+  border-right: 1px solid var(--border);
 }
 
 .npc-dossier__list > li + li {
-  border-top: 1px solid var(--border);
+  margin-top: 1px;
 }
 
 .npc-dossier__entry {
@@ -393,13 +422,19 @@
   cursor: pointer;
 }
 
-.npc-dossier__entry:hover {
-  background: var(--surface-2);
+.npc-dossier__entry {
+  border-radius: var(--radius-2);
 }
 
+.npc-dossier__entry:hover {
+  background: var(--surface-well);
+}
+
+/* A tinted fill and accent ink, not an accent fill: the row is a selection in a list, and
+   `--accent-ink` is what keeps it legible at body size. */
 .npc-dossier__entry[aria-pressed='true'] {
-  background: var(--surface-2);
-  box-shadow: inset 3px 0 0 var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 
 .npc-dossier__name {
@@ -547,7 +582,7 @@
 /* Pushed right, so the line's own content starts at a predictable left edge. */
 .npc-line__link {
   margin-left: auto;
-  color: var(--accent);
+  color: var(--accent-ink);
   text-decoration: none;
 }
 

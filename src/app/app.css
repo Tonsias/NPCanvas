@@ -248,7 +248,7 @@
    the hover underline. */
 .disclosure__summary {
   display: inline-block;
-  color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .disclosure__summary:hover {
