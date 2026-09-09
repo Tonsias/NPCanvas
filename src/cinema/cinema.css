@@ -37,27 +37,59 @@
   justify-content: center;
 }
 
-/* No justify-content: center here on purpose — that would centre the whole variable-height
-   stack (text, tags, references) as one group, so the frame's position would shift with every
-   dialogue's text length. Top-anchored keeps the frame at a constant offset instead. */
+/* Two columns, placed by area rather than by wrapper elements: the picture holds the left, the
+   words hold the right, and neither reflows when the other changes length. Every area is
+   optional — a text-only line and a wordless one both lay out without a rule of their own.
+   No justify-content: center on purpose — that would centre the whole variable-height stack as
+   one group, so the frame's position would shift with every dialogue's text length. */
 .cinema-stage {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: 58rem;
+}
+
+.cinema-stage__media {
+  flex: none;
+  width: 21.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cinema-stage__words {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  width: 100%;
-  max-width: 42rem;
+}
+
+/* Below the width the two columns need, the stage is one column again. */
+@media (max-width: 78rem) {
+  .cinema-stage {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 42rem;
+  }
+
+  .cinema-stage__media {
+    width: 100%;
+  }
 }
 
 /* aspect-ratio only while it holds a frame — a text-only line's empty frame must stay 0-height,
    not a blank grey box. Every captured frame is 160x144 (see the pixelated rule below). */
 .cinema-stage__frame {
   position: relative;
-  align-self: center;
   width: 100%;
-  max-width: 32rem;
 }
 
 .cinema-stage__frame:not(:empty) {
+  border-radius: var(--radius-2);
+  background: var(--surface-sunk);
   aspect-ratio: 160 / 144;
 }
 
@@ -141,8 +173,9 @@
 
 .cinema-stage__speaker {
   margin: 0;
-  align-self: center;
   font-family: var(--font-heading);
+  font-size: var(--text-4xl);
+  line-height: 1.1;
 }
 
 .cinema-stage__zone {
@@ -150,19 +183,19 @@
 }
 
 /* pre-wrap: a logged line keeps the breaks it was typed with — a dialogue box's own line
-   breaks are part of what was seen. */
+   breaks are part of what was seen. Capped in characters rather than pixels: what makes a line
+   readable is how far the eye travels between breaks, which is a measure of the text. */
 .cinema-stage__text {
   margin: 0;
-  width: 100%;
+  max-width: 34ch;
   white-space: pre-wrap;
-  text-align: center;
-  font-size: var(--text-md);
+  font-size: var(--text-xl);
+  line-height: 1.5;
 }
 
 .cinema-stage__chips {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: var(--space-1);
   margin: 0;
   padding: 0;
@@ -176,14 +209,35 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-round);
+}
+
+/* The one filled control in the transport: everything else steps, this one runs. */
+.cinema__play.button {
+  width: 44px;
+  min-height: 44px;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.cinema__play.button:hover:not(:disabled) {
+  color: var(--accent-contrast);
+  border-color: var(--accent);
 }
 
 .cinema__speed {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-left: auto;
+  margin-left: var(--space-2);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--border);
+}
+
+.cinema__speed input[type='range'] {
+  accent-color: var(--accent);
 }
 
 .cinema__speed-value {
@@ -195,7 +249,26 @@
 
 .cinema__band {
   flex: none;
-  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+}
+
+/* What the band is, and how to read it, on one line — the legend is a sentence rather than a key,
+   since three facts do not need three swatches. */
+.cinema__band-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.cinema__band-legend {
+  margin: 0;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
 }
 
 .cinema-band {
@@ -211,23 +284,40 @@
   outline-offset: 2px;
 }
 
+/* Every bar is its zone's hue held back, so the one the playhead is on can be the only one at
+   full strength — the playhead is an outline round that bar rather than a colour swap, which
+   would have cost the bar the only thing it says. */
 .cinema-band__slot {
-  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
+  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.55);
 }
 
 .cinema-band__slot[data-zone='none'] {
-  fill: var(--text-muted);
+  fill: var(--border-strong);
 }
 
 .cinema-band__slot[data-current] {
-  fill: var(--accent);
+  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
 }
 
+.cinema-band__slot[data-zone='none'][data-current] {
+  fill: var(--text-muted);
+}
+
+/* Sage for everyone else's edges, terracotta for the ones the line on stage draws itself: an arc
+   you are standing on is the live thing, the rest are structure. */
 .cinema-band__arc {
   fill: none;
-  stroke: var(--reference);
-  stroke-width: 2.5;
+  stroke: var(--accent-2);
+  stroke-width: 2;
   stroke-linecap: round;
+}
+
+.cinema-band__arc[data-current] {
+  stroke: var(--accent);
+  stroke-width: 2.5;
 }
 
 /* Both rails are draggable from the seam they share with `.cinema__main` — see
@@ -253,6 +343,31 @@
   flex: none;
   width: 16rem;
   padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cinema-quest-rail__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.cinema-quest-rail__count {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  background: var(--surface-well);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* The rail is a reconstruction, and saying so is the difference between reading it as history
+   and mistaking it for the document's current state. */
+.cinema-quest-rail__note {
+  color: var(--accent-2-ink);
 }
 
 .cinema-quest-rail__empty {
@@ -268,15 +383,21 @@
   list-style: none;
 }
 
-/* Text stays `--text` (the theme's own high-contrast foreground) rather than a hue-tinted
-   colour — a saturated colour on its own tinted fill (the old recipe) reads too close in
-   luminance to be legible. The hue instead marks a left border, at full saturation so it stays
-   readable against both themes' fill. */
+/* The one place in the app where a hue fill covers a whole card, and it earns it: this is what
+   makes the rail readable at a glance while scrubbing. Fill and ink are the chip recipe's own
+   pair, so the two are a fixed distance apart in lightness whatever hue the quest carries — the
+   thing the old free-floating saturation could not promise. */
 .cinema-quest-rail__item {
   padding: var(--space-3);
-  border-radius: var(--radius-1);
-  border-left: 4px solid oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue));
+  border-radius: var(--radius-2);
   background: oklch(var(--hue-chip-fill-l) var(--hue-chip-fill-c) var(--quest-hue));
+  color: oklch(var(--hue-chip-ink-l) var(--hue-chip-ink-c) var(--quest-hue));
+}
+
+/* What changed at this exact moment, said in words as well as in the ring below. */
+.cinema-quest-rail__event {
+  color: currentColor;
+  margin-bottom: var(--space-1);
 }
 
 /* The playhead is sitting on the moment this quest starts, ends, or closes (`arcEventAt`). The
@@ -305,14 +426,14 @@
 .cinema-quest-rail__name {
   margin: 0;
   font-family: var(--font-heading);
-  font-size: var(--text-md);
-  color: var(--text);
+  font-size: var(--text-lg);
+  color: currentColor;
 }
 
 .cinema-quest-rail__speaker {
   margin: var(--space-1) 0 0;
   font-size: var(--text-sm);
-  color: var(--text-muted);
+  opacity: 0.8;
 }
 
 .cinema__rail {
@@ -365,26 +486,42 @@
   border-top: 1px solid var(--border);
 }
 
+.cinema-ledger__tag {
+  padding: var(--space-1) var(--space-2);
+}
+
+/* Two stat wells side by side rather than a definition grid: a total is a thing you glance at,
+   and a glance wants a box round it. */
 .cinema-ledger__stats {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--space-1) var(--space-2);
+  display: flex;
+  gap: var(--space-2);
   margin: 0;
-  font-size: var(--text-xs);
+  font-size: var(--text-2xs);
 }
 
 .cinema-ledger__stat {
-  display: contents;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-2);
+  background: var(--surface-well);
 }
 
 .cinema-ledger__stat dt {
   color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
 }
 
 .cinema-ledger__stat dd {
   margin: 0;
   font-family: var(--font-heading);
-  text-align: right;
+  font-size: var(--text-2xl);
+  line-height: 1.1;
 }
 
 .cinema-ledger__tags {
@@ -407,15 +544,15 @@
 }
 
 .cinema-ledger__tag[data-zero] {
-  opacity: 0.4;
+  opacity: 0.45;
 }
 
 /* The line on stage carries this tag. Same recipe as a quest-rail event, in the tag's own colour:
    a held outline for the paused viewer, the ring pulse for the moving one. */
 .cinema-ledger__tag[data-current] {
   --event-ring: color-mix(in srgb, var(--segment-color) 55%, transparent);
-  background: var(--surface-2);
-  outline: 1px solid var(--segment-color);
+  background: var(--surface-well);
+  outline: 1.5px solid var(--segment-color);
   animation: cinema-event-ring calc(var(--duration-base) * 2) var(--ease-standard);
 }
 
@@ -435,7 +572,7 @@
   display: block;
   height: 3px;
   border-radius: var(--radius-round);
-  background: var(--border);
+  background: var(--surface-well);
   overflow: hidden;
 }
 

@@ -211,6 +211,12 @@ export function CinemaScreen({
             />
           </div>
           <div className="cinema__band panel">
+            <div className="cinema__band-head">
+              <p className="micro-label">The journey so far</p>
+              <p className="cinema__band-legend">
+                One slot per line · arcs are references · bar height is how much was said
+              </p>
+            </div>
             <CinemaBand
               project={project}
               reel={reel}
@@ -282,7 +288,7 @@ function Transport({
       </button>
       <button
         type="button"
-        className="button"
+        className="button cinema__play"
         aria-label={playhead.playing ? 'Pause' : 'Play'}
         title={playhead.playing ? 'Pause' : 'Play'}
         onClick={() => dispatch(playhead.playing ? { kind: 'pause' } : { kind: 'play' })}

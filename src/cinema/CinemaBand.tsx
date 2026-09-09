@@ -125,6 +125,9 @@ export function CinemaBand({
         <path
           key={`${from.moment.dialogue.id}-${to.moment.dialogue.id}`}
           className="cinema-band__arc"
+          data-current={
+            from.moment.index === moment.index || to.moment.index === moment.index ? '' : undefined
+          }
           d={arcPath(from, to)}
         />
       ))}

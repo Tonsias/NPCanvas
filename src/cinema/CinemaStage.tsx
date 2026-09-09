@@ -70,59 +70,63 @@ export function CinemaStage({
         {announcement}
       </p>
 
-      <p className="cinema-stage__speaker">
-        {dialogue.npcName}
-        {zone !== undefined && <span className="cinema-stage__zone hint-text"> — {zone.name}</span>}
-      </p>
+      <div className="cinema-stage__media">
+        <div className="cinema-stage__frame">
+          {frameLayers.map((layer, index) => (
+            <div
+              key={layer.renderKey}
+              className={
+                index < frameLayers.length - 1
+                  ? 'cinema-stage__frame-layer cinema-stage__frame-layer--leaving'
+                  : 'cinema-stage__frame-layer'
+              }
+            >
+              <MediaView media={layer.media} label={dialogue.npcName} fit="fill" />
+            </div>
+          ))}
+        </div>
 
-      <ul className="cinema-stage__chips cinema-stage__chips--relevance">
-        {relevanceTags.length === 0 ? (
-          <li className="hue-chip hue-chip--untagged">Untagged</li>
-        ) : (
-          relevanceTags.map((tag) => (
-            <li key={tag.id} className="hue-chip" style={relevanceHueStyle(tag.hue)}>
-              {tag.name}
-            </li>
-          ))
-        )}
-      </ul>
-
-      <div className="cinema-stage__frame">
-        {frameLayers.map((layer, index) => (
-          <div
-            key={layer.renderKey}
-            className={
-              index < frameLayers.length - 1
-                ? 'cinema-stage__frame-layer cinema-stage__frame-layer--leaving'
-                : 'cinema-stage__frame-layer'
-            }
-          >
-            <MediaView media={layer.media} label={dialogue.npcName} fit="fill" />
+        {frameCount > 1 && (
+          <div className="cinema-stage__frames">
+            <div className="cinema-stage__dots" role="group" aria-label="Frames">
+              {Array.from({ length: frameCount }, (_, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  className="cinema-stage__dot"
+                  aria-current={index === frame}
+                  aria-label={`Frame ${index + 1} of ${frameCount}`}
+                  onClick={() => onSeekFrame(index)}
+                />
+              ))}
+            </div>
+            <p className="cinema-stage__frame-count hint-text">
+              {frame + 1} / {frameCount}
+            </p>
           </div>
-        ))}
+        )}
       </div>
 
-      {frameCount > 1 && (
-        <div className="cinema-stage__frames">
-          <div className="cinema-stage__dots" role="group" aria-label="Frames">
-            {Array.from({ length: frameCount }, (_, index) => (
-              <button
-                key={index}
-                type="button"
-                className="cinema-stage__dot"
-                aria-current={index === frame}
-                aria-label={`Frame ${index + 1} of ${frameCount}`}
-                onClick={() => onSeekFrame(index)}
-              />
-            ))}
-          </div>
-          <p className="cinema-stage__frame-count hint-text">
-            {frame + 1} / {frameCount}
-          </p>
-        </div>
-      )}
+      <div className="cinema-stage__words">
+        <p className="cinema-stage__speaker">
+          {dialogue.npcName}
+          {zone !== undefined && <span className="cinema-stage__zone hint-text"> — {zone.name}</span>}
+        </p>
 
-      {dialogue.text !== '' && <p className="cinema-stage__text">{dialogue.text}</p>}
+        <ul className="cinema-stage__chips cinema-stage__chips--relevance">
+          {relevanceTags.length === 0 ? (
+            <li className="hue-chip hue-chip--untagged">Untagged</li>
+          ) : (
+            relevanceTags.map((tag) => (
+              <li key={tag.id} className="hue-chip" style={relevanceHueStyle(tag.hue)}>
+                {tag.name}
+              </li>
+            ))
+          )}
+        </ul>
+
+        {dialogue.text !== '' && <p className="cinema-stage__text">{dialogue.text}</p>}
+      </div>
     </div>
   )
 }

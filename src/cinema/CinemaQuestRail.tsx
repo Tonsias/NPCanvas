@@ -50,7 +50,13 @@ export function CinemaQuestRail({
 
   return (
     <>
-      <p className="micro-label">Quests</p>
+      <div className="cinema-quest-rail__head">
+        <p className="micro-label">Quests</p>
+        <span className="cinema-quest-rail__count">{active.length}</span>
+      </div>
+      <p className="cinema-quest-rail__note hint-text">
+        Rebuilt at the playhead — not what the document knows now.
+      </p>
       {active.length === 0 ? (
         <p className="hint-text cinema-quest-rail__empty">No quests yet.</p>
       ) : (
@@ -69,6 +75,11 @@ export function CinemaQuestRail({
                 data-event={event ?? undefined}
                 style={railHueStyle(state, arc.quest)}
               >
+                {event !== null && (
+                  <p className="cinema-quest-rail__event micro-label">
+                    {event === 'closed' ? 'Closed here' : 'Opened here'}
+                  </p>
+                )}
                 <p className="cinema-quest-rail__name">{questName(arc.quest)}</p>
                 {speaker !== null && <p className="cinema-quest-rail__speaker">Zuletzt: {speaker}</p>}
               </li>
