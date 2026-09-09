@@ -128,7 +128,11 @@ export function QuestBoard({
     setMode({ kind: 'editing', id: quest.id })
   }
 
+  const attaching =
+    mode.kind === 'attaching' ? (project.quests.find((quest) => quest.id === mode.id) ?? null) : null
+
   return (
+    <div className="quest-board-layout">
     <section className="quest-board">
       <header className="quest-board__bar">
         <h1 className="screen-title">Quest board</h1>
@@ -168,6 +172,25 @@ export function QuestBoard({
         ))
       )}
     </section>
+    {/* Docked beside the board rather than opened inside a card: a picker in the card repacked
+        every column under the cursor, which was the old layout's worst crowding. */}
+    {attaching !== null && (
+      <aside className="quest-board__picker panel" aria-label={`Attach a dialogue to ${questName(attaching)}`}>
+        <h2 className="micro-label">Attach to “{questName(attaching)}”</h2>
+        <DialoguePicker
+          dialogues={project.dialogues}
+          exclude={attaching.dialogueIds}
+          zonesById={zonesById}
+          zoneIndex={zoneIndex}
+          emptyMessage="Every dialogue in the project is already attached."
+          onPick={(dialogueId) =>
+            dispatch({ kind: 'quest/dialogue-attached', questId: attaching.id, dialogueId })
+          }
+          onClose={() => setMode({ kind: 'idle' })}
+        />
+      </aside>
+    )}
+    </div>
   )
 }
 
@@ -350,14 +373,7 @@ function QuestCard({
             label={`Delete ${name}?`}
           />
         ) : (
-          <QuestCardMode
-            quest={quest}
-            mode={mode}
-            onSetMode={onSetMode}
-            dialogues={dialogues}
-            zonesById={zonesById}
-            zoneIndex={zoneIndex}
-          />
+          <QuestCardMode quest={quest} mode={mode} onSetMode={onSetMode} />
         )}
 
         {linked.length === 0 ? (
@@ -404,14 +420,11 @@ function QuestCardMode({
   quest,
   mode,
   onSetMode,
-  dialogues,
-  zonesById,
-  zoneIndex,
-}: Omit<BoardData, 'dialoguesById'> & {
+}: {
   quest: Quest
   mode: QuestBoardMode
   onSetMode: (mode: QuestBoardMode) => void
-}): ReactElement {
+}): ReactElement | null {
   switch (mode.kind) {
     case 'idle':
       return (
@@ -451,19 +464,8 @@ function QuestCardMode({
       )
 
     case 'attaching':
-      return (
-        <DialoguePicker
-          dialogues={dialogues}
-          exclude={quest.dialogueIds}
-          zonesById={zonesById}
-          zoneIndex={zoneIndex}
-          emptyMessage="Every dialogue in the project is already attached."
-          onPick={(dialogueId) =>
-            dispatch({ kind: 'quest/dialogue-attached', questId: quest.id, dialogueId })
-          }
-          onClose={() => onSetMode({ kind: 'idle' })}
-        />
-      )
+      // Rendered by the board itself, in the rail beside it.
+      return null
 
     default:
       return assertNever(mode)

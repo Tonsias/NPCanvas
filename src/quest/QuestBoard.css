@@ -1,3 +1,12 @@
+/* The board and the picker that docks beside it. */
+.quest-board-layout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
 /* A reading column, not a full-bleed canvas: a quest is a thread of prose, and a line of it
    stops being readable well before a wide monitor runs out. The board scrolls as a whole. */
 .quest-board {
@@ -6,11 +15,22 @@
   overflow-y: auto;
   width: 100%;
   max-width: 62rem;
-  margin: 0 auto;
   padding-bottom: var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+/* Docked, never inside a card. Its own panel, one edge stronger than the board's own leaves. */
+.quest-board__picker {
+  flex: none;
+  width: 20rem;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-color: var(--border-strong);
 }
 
 .quest-board__bar {
@@ -63,37 +83,118 @@
   font-size: var(--text-xs);
 }
 
-/* Multi-column, not a grid and not a wrapping flex row — in both of those a row is as tall as
-   the longest quest in it, and a thread of prose plus its dialogue list is exactly what varies
-   most in height. Here each card takes only its own height and the next one packs straight
-   underneath. `columns: 22rem` is a *width*, so the count follows the board on its own and
-   needs no breakpoint; the order it reads in is down a column, then across. */
+/* The board itself: a cork ground the slips are pinned into, recessed rather than raised. The
+   speckle is a gradient, not a bitmap — a photographic cork would be a texture, and this only
+   has to read as pulp at a glance. */
 .quest-board__list {
   margin: var(--space-3) 0 0;
-  padding: 0;
+  padding: var(--space-5);
   list-style: none;
+  border-radius: var(--radius-3);
+  background:
+    radial-gradient(circle at 30% 30%, rgb(0 0 0 / 0.05) 0 1px, transparent 1px) 0 0 / 7px 7px,
+    var(--surface-well);
+  box-shadow: inset 0 2px 10px rgb(0 0 0 / 0.18);
+  /* Multi-column, not a grid and not a wrapping flex row — in both of those a row is as tall as
+     the longest quest in it, and a thread of prose plus its dialogue list is exactly what varies
+     most in height. Here each card takes only its own height and the next one packs straight
+     underneath. `columns: 22rem` is a *width*, so the count follows the board on its own and
+     needs no breakpoint; the order it reads in is down a column, then across. */
   columns: 22rem;
-  column-gap: var(--space-3);
+  column-gap: var(--space-4);
 }
 
 /* A column box is not a flex container, so the gap between stacked cards is a margin; the card
-   must also never be split across a column break. */
+   must also never be split across a column break. Wider than elsewhere: pinned slips need the
+   air, and it is what stops two rotations touching. */
 .quest-board__list > li {
   break-inside: avoid;
-  margin-bottom: var(--space-3);
+  margin-bottom: var(--space-4);
+  /* Room above for the tack, which sits half outside the card it holds up. */
+  padding-top: 7px;
 }
 
 /* ---- card ---- */
 
-/* The `.panel` base (index.css) supplies the border/radius/surface; the left edge is then
-   overridden to the quest's own colour — the same `--quest-hue` its flags fly on the canvas and
-   its links wear in the dialogue panel, so a card and a pin are matched by eye. */
+/* A slip pinned to the board. The `.panel` base (index.css) supplies the surface; the rotation
+   is static presentation, and only the straightening is motion — so the reduced-motion block
+   already covers everything that moves. Never past ±0.8°: beyond that the text renders visibly
+   soft and the board reads as broken rather than as pinned by hand. */
 .quest-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4);
-  border-left: 4px solid oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue));
+  transform: rotate(-0.6deg);
+  transform-origin: 50% 0;
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.quest-board__list > li:nth-child(3n + 2) > .quest-card {
+  transform: rotate(0.45deg);
+}
+
+.quest-board__list > li:nth-child(3n) > .quest-card {
+  transform: rotate(-0.25deg);
+}
+
+/* Straightening on focus-within is what keeps the rotation off the keyboard's path: tabbing
+   through always lands on an upright card. */
+.quest-card:hover,
+.quest-card:focus-within {
+  transform: rotate(0deg);
+}
+
+/* The tack. Terracotta for a quest still up on the board — the one place the accent marks a
+   state rather than an action, and it earns it, because "pinned up" is the live state. The
+   quest's own hue stays on the dot beside its title, so the two never compete. */
+.quest-card::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  translate: -50% 0;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-round);
+  background: var(--accent);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.35) inset,
+    0 2px 4px rgb(0 0 0 / 0.35);
+}
+
+/* Taken down, not thrown away: a finished quest keeps its place and loses its tilt. */
+.quest-card[data-status='done'] {
+  opacity: 0.75;
+}
+
+.quest-board__list > li > .quest-card[data-status='done'] {
+  transform: none;
+}
+
+.quest-card[data-status='done']::before {
+  background: var(--text-muted);
+}
+
+/* The quest's own colour — the same `--quest-hue` its flags fly on the canvas and its links wear
+   in the dialogue panel, so a card and a pin are matched by eye. */
+.quest-card__name::before {
+  content: '';
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: var(--radius-round);
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue));
+}
+
+/* A board narrow enough that the cards nearly touch is one where a rotation makes them overlap. */
+@media (max-width: 60rem) {
+  .quest-card,
+  .quest-board__list > li:nth-child(3n + 2) > .quest-card,
+  .quest-board__list > li:nth-child(3n) > .quest-card {
+    transform: none;
+  }
 }
 
 /* `.quest-card__header` (index.css) supplies the layout. */
@@ -134,17 +235,23 @@
 .quest-card__name {
   flex: 1;
   min-width: 8rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
-  font-size: var(--text-lg);
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
 }
 
 /* The name is the collapse control — the card's other verbs already live in `.row-actions`, so
    a separate chevron button would add a second thing to aim at for the same result. */
 .quest-card__toggle {
+  flex: 1;
+  /* Without it the label's ellipsis never engages and the title runs under the count. */
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  width: 100%;
   margin: 0;
   padding: 0;
   font: inherit;
@@ -183,8 +290,11 @@
   display: none;
 }
 
-/* `.hint-text` (index.css) supplies the rest — the redundant `margin: 0` is harmless on a
-   `<span>`, which has no margin to reset. */
+/* `.hint-text` (index.css) supplies the rest. Never the thing that shortens: a count of two
+   words must survive a title that does not. */
+.quest-card__linked-count {
+  flex: none;
+}
 
 /* `.quest-card__idle, .quest-card__confirm` (index.css) supply the layout. */
 
@@ -220,7 +330,7 @@
   align-items: center;
   gap: var(--space-2);
   padding-right: var(--space-2);
-  background: var(--surface-0);
+  background: var(--surface-well);
 }
 
 .quest-card__dialogue + .quest-card__dialogue {

@@ -31,7 +31,9 @@ const CEILINGS = new Map([
   // for its own M21-style reset once the rebuild has landed across every screen.
   ['app', { ceiling: 2100, note: '~165 lines of headroom — the rebuilt spine' }],
   ['storage', { ceiling: 1300, note: '~200 lines of headroom' }],
-  ['quest', { ceiling: 1250, note: '~210 lines of headroom' }],
+  // Bumped by the UI rebuild: the board became a cork notice board, which is the one screen the
+  // rebuild gave a stronger metaphor than a restyle. Due for a reset with the rest.
+  ['quest', { ceiling: 1500, note: '~160 lines of headroom — the notice board' }],
   ['media', { ceiling: 850, note: '~160 lines of headroom' }],
   ['search', { ceiling: 700, note: '~150 lines of headroom' }],
   ['dialogue-row', { ceiling: 450, note: '~140 lines of headroom — one shared row/picker' }],
