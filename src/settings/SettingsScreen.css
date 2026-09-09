@@ -74,11 +74,12 @@
 
 /* `.settings__shortcut-row` (index.css) supplies the layout. */
 
-/* A fixed column, so the descriptions line up down the group however wide a cluster gets. */
+/* A fixed column, so the descriptions line up down the group however wide a cluster gets — a
+   long one wraps inside it rather than pushing its own description out of line. */
 .settings__shortcut-keys {
   margin: 0;
-  flex: 0 0 auto;
-  min-width: 5.25rem;
+  flex: none;
+  width: 8.5rem;
 }
 
 /* `kbd` (index.css) supplies the cap; this screen is where that recipe earns itself. */

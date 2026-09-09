@@ -103,7 +103,12 @@ export function SettingsScreen({ project }: { project: ProjectFile }): ReactElem
               <h3 className="settings__shortcut-group-title micro-label">{group.title}</h3>
               <dl className="settings__shortcut-list">
                 {group.shortcuts.map((shortcut) => (
-                  <div key={shortcut.does} className="settings__shortcut-row">
+                  // Two shortcuts can do the same thing (Ctrl+K and / both open search), so the
+                  // description alone is not a key — the keys plus the description are.
+                  <div
+                    key={`${shortcut.keys.join('+')} ${shortcut.does}`}
+                    className="settings__shortcut-row"
+                  >
                     <dt className="settings__shortcut-keys">
                       {shortcut.keys.map((key, index) => (
                         <span key={key}>
