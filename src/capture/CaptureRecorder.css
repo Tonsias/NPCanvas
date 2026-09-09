@@ -2,13 +2,13 @@
    from. See CLAUDE.md's #106 note: moved verbatim out of `Nav.css`, minus the `.nav__watch-status`
    strip's `max-width: 20rem` and its ellipsis truncation — a leftover of the top bar's cramped
    width that the sidebar's own column does not need. No margin-bottom: `.side-panel__content`'s
-   own gap (CapturesPanel.tsx) already spaces this from the pending-capture list below it. */
+   own gap (CapturesPanel.tsx) already spaces this from the pending-capture list below it.
+   `.well` (index.css) supplies the recess; the fill is the boundary, so there is no border. */
 .capture-recorder {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border);
+  padding: var(--space-3);
 }
 
 .capture-recorder__watch {
@@ -25,9 +25,41 @@
 }
 
 .capture-recorder__watch-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   font-size: var(--text-2xs);
   color: var(--text);
+}
+
+/* A watcher writing into the document unattended has to be visible from across the desk, with
+   the emulator in front. Opacity only, and only where motion is welcome — the pulse is inside
+   the reduced-motion contract rather than beside it. */
+.capture-recorder__watch-note::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-round);
+  background: var(--accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .capture-recorder__watch-note::before {
+    animation: capture-recorder-pulse 1.6s var(--ease-standard) infinite;
+  }
+}
+
+@keyframes capture-recorder-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.25;
+  }
 }
 
 /* `.hint-text` (index.css) supplies the rest. */

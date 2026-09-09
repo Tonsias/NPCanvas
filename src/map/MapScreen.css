@@ -371,3 +371,28 @@
   font-size: var(--text-sm);
   color: var(--danger);
 }
+
+/* ---- captures panel ---- */
+
+/* The rail says what it holds before it says anything about the one capture in hand. */
+.captures-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Warning-hued only while something is actually waiting — a count of nothing is not news. */
+.captures-panel__count {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  background: var(--surface-well);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.captures-panel__count[data-waiting] {
+  background: var(--warning);
+  color: var(--ink-on-hue);
+}

@@ -18,14 +18,15 @@
   font-size: var(--text-xs);
 }
 
-/* The `.panel` base (index.css) supplies the border/surface; the radius is flatter than the base
-   here, to match the sidebar's other rows. */
+/* A panel one step inside the rail's own: same surface, a stronger edge, so the card reads as
+   nested rather than as a second region. The `.panel` base (index.css) supplies the rest. */
 .pending-capture-list__row {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-2);
-  border-radius: var(--radius-2);
+  padding: var(--space-3);
+  border-color: var(--border-strong);
+  box-shadow: none;
 }
 
 /* Filled while a click on the canvas will place this one — impossible to lose track of which
@@ -53,7 +54,7 @@
   justify-content: center;
   min-height: 4.5rem;
   border-radius: var(--radius-2);
-  background: var(--surface-2);
+  background: var(--surface-sunk);
   color: var(--text-muted);
   font-size: var(--text-2xs);
   text-align: center;
@@ -104,29 +105,37 @@
   align-self: flex-start;
   font: inherit;
   font-size: var(--text-2xs);
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px dashed var(--border-strong);
-  border-radius: var(--radius-1);
-  padding: var(--space-1) var(--space-2);
+  color: var(--accent-2-ink);
+  background: var(--accent-2-soft);
+  border: none;
+  border-radius: var(--radius-2);
+  padding: var(--space-1) var(--space-3);
   cursor: pointer;
   text-align: left;
 }
 
 .pending-capture-list__carry-over:hover {
-  background: var(--surface-2);
   color: var(--text);
 }
 
 /* #164's suggestion mode: a ranked list of candidates for wherever the current capture belongs,
-   shown between the relevance picker and the placement actions. */
+   shown between the relevance picker and the placement actions. Sage, because the whole block
+   describes rather than acts — the one thing in it that acts is the row you choose. */
 .pending-capture-list__suggestion {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-2);
-  border: 1px dashed var(--border-strong);
+  padding: var(--space-3);
   border-radius: var(--radius-2);
+  background: var(--accent-2-soft);
+}
+
+.pending-capture-list__suggestion-title {
+  color: var(--accent-2-ink);
+}
+
+.pending-capture-list__suggestion .hint-text {
+  color: var(--accent-2-ink);
 }
 
 .pending-capture-list__suggestion-empty {
@@ -145,24 +154,43 @@
 
 .pending-capture-list__suggestion-candidate {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
   width: 100%;
   font: inherit;
   font-size: var(--text-xs);
   color: var(--text);
-  background: var(--surface-2);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-1);
-  padding: var(--space-1) var(--space-2);
+  background: var(--surface-1);
+  border: none;
+  border-radius: var(--radius-2);
+  padding: var(--space-2);
   cursor: pointer;
   text-align: left;
 }
 
 .pending-capture-list__suggestion-candidate[aria-current='true'] {
-  border-color: var(--accent);
-  box-shadow: inset 0 0 0 1px var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+/* The rank, or G for the clock's guess — a badge rather than a number in the sentence, so the
+   order is readable without reading. */
+.pending-capture-list__suggestion-rank {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border-radius: var(--radius-round);
+  background: var(--surface-well);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.pending-capture-list__suggestion-candidate[aria-current='true'] .pending-capture-list__suggestion-rank {
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 .pending-capture-list__suggestion-text {
@@ -173,10 +201,14 @@
    carry a real score in their text, the guess never does. */
 .pending-capture-list__suggestion-guess-tag {
   flex-shrink: 0;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  background: var(--accent-2-soft);
   font-size: var(--text-2xs);
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
+  letter-spacing: 0.12em;
+  color: var(--accent-2-ink);
 }
 
 .pending-capture-list__suggestion-hint {
@@ -204,7 +236,22 @@
   padding: var(--space-1) var(--space-2);
 }
 
-/* `.pending-capture-list__actions` (index.css) supplies the layout. */
+/* `.pending-capture-list__actions` (index.css) supplies the layout. Two verbs and an icon do not
+   fit one line in a rail this narrow, and a clipped verb is a bug — so the primary keeps the
+   first row with the discard beside it, and the second verb takes a line of its own. */
+.pending-capture-list__place {
+  flex: 1;
+}
+
+/* Last in the row, so the primary keeps the first line with the discard beside it and this one
+   wraps onto its own. `order` rather than reordering the markup: the tab order the two verbs
+   already have is the order they are read in. */
+.pending-capture-list__suggest {
+  order: 1;
+  width: 100%;
+  justify-content: center;
+}
+
 .pending-capture-list__actions .button[data-armed] {
   color: var(--accent-contrast);
   background: var(--accent);

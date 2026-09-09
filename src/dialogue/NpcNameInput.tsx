@@ -33,7 +33,7 @@ export function NpcNameInput({
     <>
       <input
         id={id}
-        className="dialogue-form__input"
+        className="dialogue-form__input text-input"
         type="text"
         list={listId}
         value={value}

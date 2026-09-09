@@ -62,6 +62,12 @@ export function CapturesPanel({
       onWidthChange={onWidthChange}
       measureAvailableWidth={measureAvailableWidth}
     >
+      <div className="captures-panel__head">
+        <h2 className="micro-label">Captures</h2>
+        <span className="captures-panel__count" data-waiting={project.pendingCaptures.length > 0 ? 'true' : undefined}>
+          {project.pendingCaptures.length}
+        </span>
+      </div>
       <CaptureRecorder />
       <PendingCaptureList
         project={project}

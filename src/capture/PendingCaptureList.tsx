@@ -248,7 +248,7 @@ function CaptureCard({
       data-armed={armed ? 'true' : undefined}
       data-recording={recording ? 'true' : undefined}
     >
-      <div className="pending-capture-list__frame">
+      <div className="pending-capture-list__frame sunk">
         {firstMedium === null ? (
           <span className="pending-capture-list__no-picture">No picture</span>
         ) : (
@@ -330,6 +330,7 @@ function CaptureCard({
 
       {suggesting && (
         <div className="pending-capture-list__suggestion">
+          <p className="micro-label pending-capture-list__suggestion-title">Where does it belong?</p>
           {suggestions.length === 0 ? (
             <p className="pending-capture-list__suggestion-empty hint-text">
               No suggestion yet — nothing else is logged to place this near.
@@ -344,6 +345,9 @@ function CaptureCard({
                     aria-current={position === selectedSuggestionIndex ? 'true' : undefined}
                     onClick={() => onChangeSuggestionIndex(position)}
                   >
+                    <span className="pending-capture-list__suggestion-rank" aria-hidden="true">
+                      {candidate.source === 'neighbour' ? 'G' : position + 1}
+                    </span>
                     <span className="pending-capture-list__suggestion-text">{candidate.reason}</span>
                     {candidate.source === 'neighbour' && (
                       <span className="pending-capture-list__suggestion-guess-tag">guess</span>
@@ -375,8 +379,14 @@ function CaptureCard({
             </div>
           )}
           <p className="pending-capture-list__suggestion-hint hint-text">
-            1/2/3 or g to pick{canWiden ? ' · w to widen the search' : ''} · Enter to place here ·
-            Escape to stop suggesting
+            <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> or <kbd>G</kbd> to pick
+            {canWiden ? (
+              <>
+                {' · '}
+                <kbd>W</kbd> to widen the search
+              </>
+            ) : null}{' '}
+            · <kbd>Enter</kbd> to place here · <kbd>Esc</kbd> to stop suggesting
           </p>
         </div>
       )}
@@ -384,7 +394,7 @@ function CaptureCard({
       <div className="pending-capture-list__actions">
         <button
           type="button"
-          className="button"
+          className="button--primary pending-capture-list__place"
           aria-pressed={armed}
           data-armed={armed ? 'true' : undefined}
           onClick={onArm}
@@ -398,7 +408,7 @@ function CaptureCard({
         </button>
         <button
           type="button"
-          className="button"
+          className="button pending-capture-list__suggest"
           aria-pressed={suggesting}
           data-armed={suggesting ? 'true' : undefined}
           onClick={onToggleSuggest}

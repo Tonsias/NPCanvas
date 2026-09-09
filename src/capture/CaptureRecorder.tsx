@@ -110,8 +110,7 @@ export function CaptureRecorder(): ReactElement {
       : `Add to "${last.npcName}", the last capture recorded`
 
   return (
-    <div className="capture-recorder">
-      <h2 className="micro-label">Captures</h2>
+    <div className="capture-recorder well">
       <div className="capture-recorder__watch">
         <WatcherStatus watch={watch} pendingCaptures={pendingCaptures} />
         {captureProfiles.length > 0 && (
