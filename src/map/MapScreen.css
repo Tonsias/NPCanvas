@@ -151,9 +151,9 @@
   overflow: hidden;
   white-space: nowrap;
   color: var(--text);
-  background: hsl(var(--zone-hue) 70% 55% / 0.14);
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.14);
   border: 1px solid transparent;
-  border-left: 3px solid hsl(var(--zone-hue) 75% 62%);
+  border-left: 3px solid oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
   border-radius: var(--radius-2);
   padding: var(--space-1) var(--space-2);
   cursor: pointer;
@@ -163,12 +163,12 @@
 }
 
 .zone-list__name:hover {
-  background: hsl(var(--zone-hue) 70% 55% / 0.28);
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.28);
 }
 
 .zone-list__name[aria-current='true'] {
   border-color: var(--accent);
-  border-left-color: hsl(var(--zone-hue) 75% 62%);
+  border-left-color: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
 }
 
 /* Pushed to the right edge of the row, and given the ellipsis budget the name gives up: a
@@ -187,7 +187,7 @@
 
 /* `.hue-swatch` (index.css) supplies the size/frame/focus ring; only the fill is the zone's own. */
 .zone-list__swatch {
-  background: hsl(var(--zone-hue) 75% 62%);
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
 }
 
 /* ---- tools ---- */

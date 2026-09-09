@@ -18,7 +18,7 @@ export function segmentLabel(tags: readonly RelevanceTag[]): ReadonlyMap<Segment
 }
 
 // Mid-lightness so the near-black count labels stay legible on it in either colour scheme.
-const UNTAGGED_COLOR = 'hsl(220 8% 62%)'
+const UNTAGGED_COLOR = 'oklch(0.68 0.015 250)'
 
 export function segmentColor(tags: readonly RelevanceTag[]): ReadonlyMap<SegmentKey, string> {
   const colors = new Map<SegmentKey, string>(tags.map((tag) => [tag.id, relevanceColor(tag.hue)]))

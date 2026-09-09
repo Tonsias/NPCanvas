@@ -39,7 +39,7 @@ describe('relevancePinBackground', () => {
       const lastStop = /(\d+(?:\.\d+)?)%\)$/.exec(fill)
       expect(lastStop).not.toBeNull()
       expect(Number(lastStop?.[1])).toBeCloseTo(100) // floating-point, not always the literal "100"
-      expect(fill.split('hsl(').length - 1).toBe(Math.min(count, 6)) // caps at six, incl. overflow marker
+      expect(fill.split('oklch(').length - 1).toBe(Math.min(count, 6)) // caps at six, incl. overflow marker
     }
   })
 
@@ -59,7 +59,7 @@ describe('relevancePinBackground', () => {
     // overflow marker — never a seventh-plus real colour silently dropped.
     const twelve = Array.from({ length: 12 }, (_, index) => index * 10)
     const share = 100 / 6
-    const colors = [...twelve.slice(0, 5).map(relevanceColor), 'hsl(220 8% 45%)']
+    const colors = [...twelve.slice(0, 5).map(relevanceColor), 'oklch(0.53 0.015 250)']
     expect(relevancePinBackground(twelve)).toBe(
       `linear-gradient(90deg, ${colors
         .map((color, i) => `${color} ${i * share}% ${(i + 1) * share}%`)

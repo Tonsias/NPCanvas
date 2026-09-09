@@ -1,5 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import '@fontsource/caprasimo/400.css'
+import '@fontsource-variable/figtree'
 import './index.css'
 import App from './app/App.tsx'
 import { ErrorBoundary } from './app/ErrorBoundary.tsx'

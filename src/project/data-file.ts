@@ -157,7 +157,7 @@ function readNonNegativeNumber(value: unknown, path: string): number {
   return number
 }
 
-/** 0..359, the invariant `types.ts` declares and every hsl() downstream assumes. */
+/** 0..359, the invariant `types.ts` declares and every oklch() downstream assumes. */
 function readHue(value: unknown, path: string): number {
   const hue = readNumber(value, path)
   if (hue < 0 || hue > 359) throw new SchemaError(path, 'a hue in 0..359')

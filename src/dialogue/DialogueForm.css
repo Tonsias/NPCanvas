@@ -83,14 +83,14 @@
 }
 
 .relevance-picker__tag[data-checked='true'] {
-  border-color: hsl(var(--relevance-hue) 70% 60%);
-  background: hsl(var(--relevance-hue) 70% 60% / 0.18);
+  border-color: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--relevance-hue));
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--relevance-hue) / 0.18);
   color: var(--text);
 }
 
 .relevance-picker__input {
   /* The tag itself carries the state visually; the box stays for hit area and semantics. */
-  accent-color: hsl(var(--relevance-hue) 70% 60%);
+  accent-color: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--relevance-hue));
   margin: 0;
 }
 

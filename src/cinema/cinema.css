@@ -212,7 +212,7 @@
 }
 
 .cinema-band__slot {
-  fill: hsl(var(--zone-hue) 60% 50%);
+  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
 }
 
 .cinema-band__slot[data-zone='none'] {
@@ -275,8 +275,8 @@
 .cinema-quest-rail__item {
   padding: var(--space-3);
   border-radius: var(--radius-1);
-  border-left: 4px solid hsl(var(--quest-hue) 70% 50%);
-  background: hsl(var(--quest-hue) var(--hue-chip-fill) / calc(var(--hue-chip-fill-alpha) * 1.6));
+  border-left: 4px solid oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue));
+  background: oklch(var(--hue-chip-fill-l) var(--hue-chip-fill-c) var(--quest-hue));
 }
 
 /* The playhead is sitting on the moment this quest starts, ends, or closes (`arcEventAt`). The
@@ -285,8 +285,8 @@
    viewer still sees which row just changed. Green comes for free: railHueStyle already swaps
    `--quest-hue` to QUEST_DONE_HUE for a closed quest. */
 .cinema-quest-rail__item[data-event] {
-  --event-ring: color-mix(in srgb, hsl(var(--quest-hue) 70% 55%) 55%, transparent);
-  outline: 2px solid hsl(var(--quest-hue) 70% 55%);
+  --event-ring: color-mix(in srgb, oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue)) 55%, transparent);
+  outline: 2px solid oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue));
   outline-offset: 1px;
   animation: cinema-event-ring calc(var(--duration-base) * 2) var(--ease-standard);
 }
@@ -341,8 +341,8 @@
 }
 
 .cinema-minimap__zone {
-  fill: hsl(var(--zone-hue) 55% 45% / 0.35);
-  stroke: hsl(var(--zone-hue) 60% 50%);
+  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.35);
+  stroke: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
 }
 
 .cinema-minimap__trail-walked {

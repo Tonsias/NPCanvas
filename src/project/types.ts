@@ -55,7 +55,7 @@ export type Zone = {
   mapId: MapId
   name: string
   polygon: Polygon
-  hue: number // 0..359; fill/stroke derived via hsl() so colors stay in one system
+  hue: number // 0..359; fill/stroke derived via oklch() so colors stay in one system
 }
 
 /** Text and media are orthogonal and stored separately — a captured line can append both. */

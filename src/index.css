@@ -1,49 +1,74 @@
-/* Design tokens. Dark is the base palette — the app is a map canvas, and a dark
-   ground keeps map imagery and relevance hues from competing with the chrome.
-   The light theme overrides only the color tokens; every other token is shared. */
+/* Design tokens. Night is the base palette — the app is a map canvas, and a dark ground keeps
+   map imagery and relevance hues from competing with the chrome. The light theme overrides only
+   the colour tokens; every other token is shared. */
 :root {
-  --font-sans: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: Caprasimo, Georgia, serif;
+  --font-body: 'Figtree Variable', Figtree, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'Cascadia Mono', Menlo, monospace;
+  /* Alias only, until the per-screen phases finish sweeping the old name out. */
+  --font-sans: var(--font-body);
 
   /* Surface ramp: 0 is the furthest back, 3 the most raised (popovers, menus). */
-  --surface-0: #14161a;
-  --surface-1: #1b1e24;
-  --surface-2: #23272f;
-  --surface-3: #2c313a;
+  --surface-0: #171b13;
+  --surface-1: #212619;
+  --surface-2: #2a3120;
+  --surface-3: #343d28;
 
-  --text: rgba(255, 255, 255, 0.92);
-  --text-muted: rgba(255, 255, 255, 0.58);
-  --border: rgba(255, 255, 255, 0.14);
-  --border-strong: rgba(255, 255, 255, 0.28);
+  /* A recess, not an elevation, which is why these sit outside the ramp above and go *darker*
+     than --surface-1 in both themes. Folding them into --surface-2/3 would break the "more
+     raised" meaning the rest of the app reads off that ramp. */
+  --surface-well: #1a1e15;
+  --surface-sunk: #11140d;
 
-  --accent: #6ea8fe;
-  --accent-contrast: #0b1220;
+  --text: #f5ead8;
+  --text-muted: #a49a87;
+  --border: #333a28;
+  --border-strong: #454d38;
 
-  /* Quest membership, wherever it is shown: the pin flag, the panel's quest links, the board.
-     A relevance tag's hue is user-chosen and can land anywhere on the wheel, so this can no
-     longer promise to sit outside all of them by number alone — what keeps a quest flag from
-     being mistaken for a relevance band is its shape and position (a pennant flown above the
-     pin, never a stripe in its fill), not this colour being reserved. Kept away from --accent
-     regardless, so "in a quest" still never reads as "selected". */
-  --quest: #f2c14e;
+  /* Terracotta acts — selection, recording, the primary verb, the playhead — and never carries
+     structure. Against the ground it is only ~3:1, legal for icons, chrome and headline-scale
+     type; any body-size text in the accent colour must use --accent-ink instead. */
+  --accent: #f6a06b;
+  --accent-ink: #ffc6a5;
+  --accent-soft: #3a2113;
+  --accent-contrast: #2b1608;
 
-  /* The chronological trail on the canvas, and the toggle that draws it. Deliberately *not*
-     darkened in the light theme the way --quest is: --quest is also ink on a page surface
-     (InsightsScreen.css), whereas this is only ever a mark over map imagery and a fill behind
-     --ink-on-hue, both of which want the same light, saturated colour in either theme. Kept off
-     --accent's blue and --quest's gold, so a line of time is not mistaken for a selection or a
-     quest. */
-  --trail: #4fd6c0;
+  /* Sage describes — zones, hints, learned state, quest chrome. The second voice, never a verb. */
+  --accent-2: #aebf92;
+  --accent-2-ink: #ccdbb2;
+  --accent-2-soft: #2a3320;
 
-  /* A dialogue's stored reference to another line, drawn on the canvas. Kept off --accent's
-     blue, --quest's gold and --trail's teal, the same reasoning as --trail itself — a fourth
-     kind of line on the canvas needs a fourth colour nothing else claims. Not darkened for the
-     light theme either, for the same reason --trail is not. */
-  --reference: #c77dff;
+  /* Four mutually distinguishable line/mark colours on the canvas, of which only --accent ever
+     reads as "selected". A walked route is structure rather than an action, so the trail *is*
+     sage; the alias survives so the CSS drawing it still names what it draws. --quest is also
+     ink on a page surface (InsightsScreen.css) and so is darkened for the light theme;
+     --reference is only ever a mark over map imagery and is not. */
+  --trail: var(--accent-2);
+  --quest: #d98cb8;
+  --reference: #8fa9d6;
 
-  /* The halo every world-space line/label wears for contrast against map imagery. Fixed
-     regardless of theme, like --trail and --reference. */
+  /* Semantic status colours — the only two the app needs. Both get a light-theme override
+     below: a colour picked to read on a near-black surface is not guaranteed to read on paper. */
+  --danger: #ff8f8f;
+  --warning: #ffcf8f;
+
+  /* Ink painted directly on a saturated hue fill, and the halo every world-space line and label
+     wears over map imagery. Both fixed across themes, because what sits underneath them is. */
+  --ink-on-hue: #11140d;
   --line-halo: rgba(0, 0, 0, 0.65);
+
+  /* Hue stays data, weight stays fixed: every zone, quest and relevance hue renders at one
+     lightness and one chroma per theme. OKLCH rather than HSL because that promise is only true
+     in a perceptual space — an HSL yellow and an HSL blue at "55%" are nowhere near the same
+     weight. --hue-mark-* is a mark over map imagery and is deliberately *not* overridden for the
+     light theme, for the same reason --line-halo is not; it also mirrors MARK_L/MARK_C in
+     relevance.ts, which computes the same colour in JS for the pin fill. */
+  --hue-chip-fill-l: 0.33;
+  --hue-chip-fill-c: 0.05;
+  --hue-chip-ink-l: 0.88;
+  --hue-chip-ink-c: 0.09;
+  --hue-mark-l: 0.7;
+  --hue-mark-c: 0.11;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -53,9 +78,10 @@
   --space-6: 2rem;
   --space-7: 3rem;
 
-  --radius-1: 3px;
-  --radius-2: 6px;
-  --radius-3: 10px;
+  /* Nothing is square: 1 is a chip or a key cap, 2 a card inside a panel, 3 a panel itself. */
+  --radius-1: 8px;
+  --radius-2: 16px;
+  --radius-3: 24px;
   --radius-round: 999px;
 
   /* Typography scale — nine steps, floor at 0.75rem (12px). Nothing in the app prints smaller
@@ -71,36 +97,16 @@
   --text-3xl: 2rem;
   --text-4xl: 2.5rem;
 
-  /* Semantic status colours — the only two the app needs. Both get a light-theme override
-     below: a colour picked to read on a near-black surface is not guaranteed to read on white. */
-  --danger: #ff8f8f;
-  --warning: #ffcf8f;
-
-  /* Ink for text painted directly on a saturated hue fill — a relevance segment's count, a
-     pressed quest-filter toggle. Fixed regardless of theme: the fill underneath is the same
-     hue whether the app is light or dark, so an ink that flipped with the theme would go
-     light-on-light in one of them. */
-  --ink-on-hue: #10131a;
-
-  /* The hue-chip recipe every zone and quest chip builds on top of its own `--zone-hue` or
-     `--quest-hue` — an outline a touch brighter than the fill, at low opacity, so a project
-     with a dozen zones still reads as one system rather than one improvisation per chip. */
-  --hue-chip-border: 75% 62%;
-  --hue-chip-fill: 70% 55%;
-  --hue-chip-fill-alpha: 0.18;
-
-  /* A relevance tag's own accent — mirrors `SATURATION`/`LIGHTNESS` in relevance.ts, which
-     computes the same colour in JS for contexts CSS alone cannot reach (the pin fill). */
-  --relevance-sl: 70% 60%;
-
   /* One focus ring for every custom control the browser's own default outline does not reach —
      `outline-offset` still varies per control, since an inset ring on a segmented button and an
      outset one on a card are both correct for their own shape. */
   --focus-ring: 2px solid var(--accent);
 
-  /* The one true popover shadow — currently just the search palette, but a second overlay
-     should reach for this rather than inventing its own blur and spread. */
-  --shadow-popover: 0 20px 60px rgb(0 0 0 / 0.4);
+  /* Two elevations, and only two: a panel resting on the ground, and an overlay above it. Both
+     are re-valued for the light theme — a shadow tuned for a near-black ground goes muddy on
+     paper. */
+  --shadow-panel: 0 3px 12px rgb(0 0 0 / 0.45);
+  --shadow-popover: 0 16px 40px rgb(0 0 0 / 0.55);
 
   /* Motion — two rates rather than a scale of many, because a control either responds to the
      pointer right under it (fast) or a state elsewhere on screen settles (base), and nothing
@@ -115,7 +121,7 @@
   /* A floor every button, input and select can agree on when several of them sit in one row —
      `min-height`, not `height`: content taller than this (a wrapped label) still gets to ask
      for more room instead of being clipped. */
-  --control-height: 2rem;
+  --control-height: 2.125rem;
 
   /* The one upward breakpoint every screen that gains a wide layout shares (#93) — chosen from
      where a two-column reading layout (insights' charts, the NPC dossier) actually starts
@@ -125,7 +131,7 @@
   --breakpoint-wide: 92rem;
 
   color-scheme: light dark;
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   line-height: 1.5;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -135,26 +141,41 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --surface-0: #ffffff;
-    --surface-1: #f5f6f8;
-    --surface-2: #eceef2;
-    --surface-3: #e2e5ea;
+    --surface-0: #f5ead8;
+    --surface-1: #fbf7ef;
+    --surface-2: #fffdf8;
+    --surface-3: #ffffff;
+    --surface-well: #ebddc5;
+    --surface-sunk: #e3d3b6;
 
-    --text: #1a1f29;
-    --text-muted: rgba(26, 31, 41, 0.62);
-    --border: rgba(26, 31, 41, 0.16);
-    --border-strong: rgba(26, 31, 41, 0.32);
+    --text: #201e1d;
+    --text-muted: #645c50;
+    --border: #dbcfb9;
+    --border-strong: #c8b99c;
 
-    --accent: #1f5fd0;
-    --accent-contrast: #ffffff;
+    --accent: #c67139;
+    --accent-ink: #8c491a;
+    --accent-soft: #ffe1d0;
+    --accent-contrast: #fbf7ef;
 
-    /* Darkened for contrast: the dark theme's gold is illegible as ink on white. */
-    --quest: #a9741a;
+    --accent-2: #7a8a5e;
+    --accent-2-ink: #4a5636;
+    --accent-2-soft: #e6f0d6;
 
-    /* Darkened the same way --quest is: the dark theme's pale salmon and amber are illegible
-       as ink on white, which is the one thing the theme mechanism exists to prevent. */
+    /* Darkened for contrast: the night theme's values are illegible as ink on paper, which is
+       the one thing the theme mechanism exists to prevent. */
+    --quest: #8c4a7c;
+    --reference: #3f6096;
     --danger: #b3261e;
     --warning: #8a5a00;
+
+    --hue-chip-fill-l: 0.93;
+    --hue-chip-fill-c: 0.045;
+    --hue-chip-ink-l: 0.44;
+    --hue-chip-ink-c: 0.1;
+
+    --shadow-panel: 0 3px 10px rgb(46 43 37 / 0.14);
+    --shadow-popover: 0 14px 34px rgb(46 43 37 / 0.2);
   }
 }
 
@@ -750,34 +771,33 @@ body {
   box-shadow: 0 0 0 1px var(--accent);
 }
 
-/* A zone or quest's colour, as an outline plus a translucent fill built from whichever hue
-   custom property the caller published — `zoneHueStyle`/`questAccentStyle` in TS set exactly
-   one of `--zone-hue`/`--quest-hue` via `style`, and the attribute selector picks the matching
-   recipe. `:not(:first-child)` fading (zones come back most specific first) is scoped to each
-   list's own class, since a quest chip is never in that kind of list. */
+/* A zone, quest or relevance tag's colour as a fill/ink pair built from whichever hue custom
+   property the caller published — `zoneHueStyle`/`questAccentStyle` in TS set exactly one of
+   `--zone-hue`/`--quest-hue` via `style`, and the attribute selector picks the matching recipe.
+   No border: at one fixed lightness apart, the fill is already its own boundary. */
 .hue-chip {
   padding: 0 var(--space-2);
   border-radius: var(--radius-round);
 }
 
 .hue-chip[style*='--zone-hue'] {
-  border: 1px solid hsl(var(--zone-hue) var(--hue-chip-border));
-  background: hsl(var(--zone-hue) var(--hue-chip-fill) / var(--hue-chip-fill-alpha));
+  background: oklch(var(--hue-chip-fill-l) var(--hue-chip-fill-c) var(--zone-hue));
+  color: oklch(var(--hue-chip-ink-l) var(--hue-chip-ink-c) var(--zone-hue));
 }
 
 .hue-chip[style*='--quest-hue'] {
-  border: 1px solid hsl(var(--quest-hue) var(--hue-chip-border));
-  background: hsl(var(--quest-hue) var(--hue-chip-fill) / var(--hue-chip-fill-alpha));
+  background: oklch(var(--hue-chip-fill-l) var(--hue-chip-fill-c) var(--quest-hue));
+  color: oklch(var(--hue-chip-ink-l) var(--hue-chip-ink-c) var(--quest-hue));
 }
 
 .hue-chip[style*='--relevance-hue'] {
-  border: 1px solid hsl(var(--relevance-hue) var(--hue-chip-border));
-  background: hsl(var(--relevance-hue) var(--hue-chip-fill) / var(--hue-chip-fill-alpha));
+  background: oklch(var(--hue-chip-fill-l) var(--hue-chip-fill-c) var(--relevance-hue));
+  color: oklch(var(--hue-chip-ink-l) var(--hue-chip-ink-c) var(--relevance-hue));
 }
 
-/* Matches UNTAGGED_COLOR in relevance-segments.ts — not hue-based, so it can't go through the
-   --relevance-hue formula above. */
+/* Untagged is the absence of a hue, so it cannot go through the recipe above — a well fill says
+   so without inventing a colour that would read as one more category. */
 .hue-chip--untagged {
-  border: 1px solid hsl(220 8% 62% / 0.6);
-  background: hsl(220 8% 62% / var(--hue-chip-fill-alpha));
+  background: var(--surface-well);
+  color: var(--text-muted);
 }

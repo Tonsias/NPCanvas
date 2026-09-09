@@ -126,7 +126,7 @@
 
 /* `.hue-swatch` (index.css) supplies the size/frame/focus ring; only the fill is the tag's own. */
 .relevance-tag-list__swatch {
-  background: hsl(var(--relevance-hue) var(--relevance-sl));
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--relevance-hue));
 }
 
 /* --breakpoint-wide (index.css). Nothing here is prose: a shortcut row is two short columns,

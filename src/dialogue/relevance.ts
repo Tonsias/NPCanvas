@@ -6,9 +6,9 @@ import type { RelevanceTag, RelevanceTagId } from '../project/types.ts'
 // nothing downstream reads these slugs, `relevanceTags` ids are what the document stores.
 const DEFAULT_RELEVANCE_SLUGS = ['out-of-world', 'worldbuilding', 'peoplebuilding', 'other'] as const
 
-// Saturation and lightness are fixed across the app; only the hue distinguishes a tag.
-const SATURATION = '70%'
-const LIGHTNESS = '60%'
+// Fixed across the app; only the hue distinguishes a tag. Mirrors `--hue-mark-*` in index.css.
+const MARK_L = '0.7'
+const MARK_C = '0.11'
 
 // Same pattern as QUEST_HUES/ZONE_HUES, but no reserved band — a relevance tag carries no
 // status that overrides its own colour.
@@ -53,7 +53,7 @@ export function relevanceHueStyle(hue: number): CSSProperties & Record<'--releva
 }
 
 export function relevanceColor(hue: number): string {
-  return `hsl(${hue} ${SATURATION} ${LIGHTNESS})`
+  return `oklch(${MARK_L} ${MARK_C} ${hue})`
 }
 
 // Past this many bands a hue is no longer distinguishable on a pin a few screen pixels wide
@@ -61,7 +61,7 @@ export function relevanceColor(hue: number): string {
 const MAX_PIN_BANDS = 6
 
 // Never a real tag's hue, so the overflow band reads as "more", not as an unfamiliar category.
-const OVERFLOW_BAND_COLOR = 'hsl(220 8% 45%)'
+const OVERFLOW_BAND_COLOR = 'oklch(0.53 0.015 250)'
 
 // Untagged is the chrome's own surface, not a first-tag default — "not yet classified" is real
 // information a colour would misrepresent.

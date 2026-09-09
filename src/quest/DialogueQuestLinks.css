@@ -21,9 +21,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text);
-  background: hsl(var(--quest-hue) 70% 55% / 0.16);
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue) / 0.16);
   border: 1px solid transparent;
-  border-left: 3px solid hsl(var(--quest-hue) 70% 55%);
+  border-left: 3px solid oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue));
   border-radius: var(--radius-2);
   padding: var(--space-1) var(--space-2);
   cursor: pointer;
@@ -31,7 +31,7 @@
 
 .dialogue-quests__link:hover,
 .dialogue-quests__option:hover {
-  background: hsl(var(--quest-hue) 70% 55% / 0.28);
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue) / 0.28);
 }
 
 .dialogue-quests__option {

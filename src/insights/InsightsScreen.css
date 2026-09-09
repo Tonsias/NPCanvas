@@ -103,11 +103,11 @@
 }
 
 .filter-bar__tag {
-  border-color: hsl(var(--relevance-hue) var(--relevance-sl));
+  border-color: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--relevance-hue));
 }
 
 .filter-bar__tag[aria-pressed='true'] {
-  background: hsl(var(--relevance-hue) var(--relevance-sl));
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--relevance-hue));
   color: var(--ink-on-hue);
   font-weight: 600;
 }
@@ -488,14 +488,13 @@
 }
 
 /* The same hue the quest wears on its card and on the pins that fly its flag, at the same
-   border/fill recipe every other hue chip uses — see `--hue-chip-*` in index.css. */
+   fill/ink recipe every other hue chip uses — see `--hue-chip-*` in index.css. */
 .npc-dossier__quest {
   display: inline-block;
   padding: 0 var(--space-2);
   border-radius: var(--radius-round);
-  border: 1px solid hsl(var(--quest-hue) var(--hue-chip-border));
-  background: hsl(var(--quest-hue) var(--hue-chip-fill) / var(--hue-chip-fill-alpha));
-  color: var(--text);
+  background: oklch(var(--hue-chip-fill-l) var(--hue-chip-fill-c) var(--quest-hue));
+  color: oklch(var(--hue-chip-ink-l) var(--hue-chip-ink-c) var(--quest-hue));
   text-decoration: none;
 }
 

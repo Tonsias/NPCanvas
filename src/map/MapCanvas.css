@@ -206,13 +206,13 @@
 /* Fill and stroke are one hue at two alphas — see zoneHueStyle. The stroke width is in screen
    pixels rather than map units thanks to vector-effect on the element. */
 .zone-layer__shape {
-  fill: hsl(var(--zone-hue) 70% 55% / 0.16);
-  stroke: hsl(var(--zone-hue) 75% 62%);
+  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.16);
+  stroke: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
   stroke-width: 2;
 }
 
 .zone-layer__shape[data-selected='true'] {
-  fill: hsl(var(--zone-hue) 70% 55% / 0.32);
+  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.32);
   stroke-width: 3;
   stroke-dasharray: 6 3;
 }
@@ -228,7 +228,7 @@
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 600;
-  fill: hsl(var(--zone-hue) 80% 78%);
+  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
   /* The label sits over arbitrary map imagery, so it carries its own contrast rather than
      trusting the ground beneath it. */
   paint-order: stroke;
@@ -469,7 +469,7 @@
 .pin__quest {
   width: 1.125rem;
   height: 1.125rem;
-  color: hsl(var(--quest-hue) 75% 58%);
+  color: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--quest-hue));
   filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.9));
 }
 
