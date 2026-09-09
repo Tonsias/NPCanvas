@@ -1,6 +1,6 @@
 /* Design tokens. Night is the base palette — the app is a map canvas, and a dark ground keeps
-   map imagery and relevance hues from competing with the chrome. The light theme overrides only
-   the colour tokens; every other token is shared. */
+   map imagery and relevance hues from competing with the chrome. The light theme overrides the
+   colour tokens and `color-scheme`; every other token is shared. */
 :root {
   --font-heading: Caprasimo, Georgia, serif;
   --font-body: 'Figtree Variable', Figtree, system-ui, sans-serif;
@@ -128,7 +128,7 @@
      92rem)` below repeats it literally rather than inventing a second one. */
   --breakpoint-wide: 92rem;
 
-  color-scheme: light dark;
+  color-scheme: dark;
   font-family: var(--font-body);
   line-height: 1.5;
   font-synthesis: none;
@@ -137,46 +137,49 @@
   background-color: var(--surface-0);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --surface-0: #f5ead8;
-    --surface-1: #fbf7ef;
-    --surface-2: #fffdf8;
-    --surface-3: #ffffff;
-    --surface-well: #ebddc5;
-    --surface-sunk: #e3d3b6;
+/* The one light-theme block. The preference is resolved to an explicit `data-theme` before the
+   first paint (index.html) rather than matched on `prefers-color-scheme` here, so a reader can
+   override the system — see src/settings/theme.ts. */
+:root[data-theme='light'] {
+  color-scheme: light;
 
-    --text: #201e1d;
-    --text-muted: #645c50;
-    --border: #dbcfb9;
-    --border-strong: #c8b99c;
+  --surface-0: #f5ead8;
+  --surface-1: #fbf7ef;
+  --surface-2: #fffdf8;
+  --surface-3: #ffffff;
+  --surface-well: #ebddc5;
+  --surface-sunk: #e3d3b6;
 
-    /* Darker than the mockup's terracotta by three steps, and measured: a paper-white label on
-       the original sat at 3.38:1, which is a primary button nobody can read. 4.69:1 here. */
-    --accent: #ab5926;
-    --accent-ink: #8c491a;
-    --accent-soft: #ffe1d0;
-    --accent-contrast: #fbf7ef;
+  --text: #201e1d;
+  --text-muted: #645c50;
+  --border: #dbcfb9;
+  --border-strong: #c8b99c;
 
-    --accent-2: #7a8a5e;
-    --accent-2-ink: #4a5636;
-    --accent-2-soft: #e6f0d6;
+  /* Darker than the mockup's terracotta by three steps, and measured: a paper-white label on
+     the original sat at 3.38:1, which is a primary button nobody can read. 4.69:1 here. */
+  --accent: #ab5926;
+  --accent-ink: #8c491a;
+  --accent-soft: #ffe1d0;
+  --accent-contrast: #fbf7ef;
 
-    /* Darkened for contrast: the night theme's values are illegible as ink on paper, which is
-       the one thing the theme mechanism exists to prevent. */
-    --quest: #8c4a7c;
-    --reference: #3f6096;
-    --danger: #b3261e;
-    --warning: #8a5a00;
+  --accent-2: #7a8a5e;
+  --accent-2-ink: #4a5636;
+  --accent-2-soft: #e6f0d6;
 
-    --hue-chip-fill-l: 0.93;
-    --hue-chip-fill-c: 0.045;
-    --hue-chip-ink-l: 0.44;
-    --hue-chip-ink-c: 0.1;
+  /* Darkened for contrast: the night theme's values are illegible as ink on paper, which is
+     the one thing the theme mechanism exists to prevent. */
+  --quest: #8c4a7c;
+  --reference: #3f6096;
+  --danger: #b3261e;
+  --warning: #8a5a00;
 
-    --shadow-panel: 0 3px 10px rgb(46 43 37 / 0.14);
-    --shadow-popover: 0 14px 34px rgb(46 43 37 / 0.2);
-  }
+  --hue-chip-fill-l: 0.93;
+  --hue-chip-fill-c: 0.045;
+  --hue-chip-ink-l: 0.44;
+  --hue-chip-ink-c: 0.1;
+
+  --shadow-panel: 0 3px 10px rgb(46 43 37 / 0.14);
+  --shadow-popover: 0 14px 34px rgb(46 43 37 / 0.2);
 }
 
 /* Every transition in the app reads one of the two duration tokens above, which is what makes

@@ -177,3 +177,22 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* A panel whose whole content is one control: the title and the choice share a line. */
+.settings__section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.settings__theme-picker {
+  display: flex;
+  margin-left: auto;
+}
+
+/* The option values are the labels — 'system' | 'light' | 'dark' render as written. */
+.settings__theme-button {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  text-transform: capitalize;
+}

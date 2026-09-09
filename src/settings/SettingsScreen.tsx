@@ -1,7 +1,10 @@
 import type { ReactElement } from 'react'
+import { useState } from 'react'
+import { RovingRadioGroup } from '../app/RovingRadioGroup.tsx'
 import { CaptureBar } from '../capture/CaptureBar.tsx'
 import { RelevanceTagList } from '../insights/RelevanceTagList.tsx'
 import type { ProjectFile } from '../project/types.ts'
+import { getThemePreference, setThemePreference, THEME_PREFERENCES } from './theme.ts'
 import './SettingsScreen.css'
 
 type Shortcut = { keys: readonly string[]; does: string }
@@ -93,6 +96,10 @@ export function SettingsScreen({ project }: { project: ProjectFile }): ReactElem
         />
       </div>
 
+      {/* Device-scoped rather than part of the document, which is why it stands apart from the
+          two project panels above and holds its own state instead of reading the store. */}
+      <ThemePicker />
+
       <section className="settings__section panel" aria-labelledby="settings-shortcuts-heading">
         <h2 id="settings-shortcuts-heading" className="settings__section-title">
           Keyboard shortcuts
@@ -125,6 +132,34 @@ export function SettingsScreen({ project }: { project: ProjectFile }): ReactElem
           ))}
         </div>
       </section>
+    </section>
+  )
+}
+
+function ThemePicker(): ReactElement {
+  const [preference, setPreference] = useState(getThemePreference)
+
+  return (
+    <section className="settings__section panel" aria-labelledby="settings-appearance-heading">
+      <div className="settings__section-head">
+        <h2 id="settings-appearance-heading" className="settings__section-title">
+          Appearance
+        </h2>
+        <RovingRadioGroup
+          className="settings__theme-picker"
+          ariaLabel="Theme"
+          orientation="horizontal"
+          options={THEME_PREFERENCES}
+          optionKey={(option) => option}
+          selectedKey={preference}
+          buttonClassName="settings__theme-button segmented-button"
+          onChange={(option) => {
+            setThemePreference(option)
+            setPreference(option)
+          }}
+          renderOption={(option) => option}
+        />
+      </div>
     </section>
   )
 }

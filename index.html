@@ -4,6 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NPCanvas</title>
+    <script>
+      // Resolves the stored preference to an explicit data-theme before the stylesheet paints,
+      // so a light-theme reload never flashes the dark ground. Inline rather than in main.tsx
+      // because the module bundle is fetched and evaluated after the first paint; the key is
+      // repeated from src/settings/theme.ts, the one place that writes it.
+      ;(function () {
+        var stored = null
+        try {
+          stored = localStorage.getItem('npcanvas.theme')
+        } catch (error) {
+          /* site data blocked */
+        }
+        document.documentElement.dataset.theme =
+          stored === 'light' || stored === 'dark'
+            ? stored
+            : matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

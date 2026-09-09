@@ -37,7 +37,9 @@ const CEILINGS = new Map([
   ['media', { ceiling: 850, note: '~160 lines of headroom' }],
   ['search', { ceiling: 700, note: '~150 lines of headroom' }],
   ['dialogue-row', { ceiling: 450, note: '~140 lines of headroom — one shared row/picker' }],
-  ['settings', { ceiling: 400, note: '~130 lines of headroom' }],
+  // Bumped by the theme switch: settings is where a device-scoped preference lands, and the
+  // one it gained needed a resolver, a store and a control. Nothing else was near the ceiling.
+  ['settings', { ceiling: 460, note: '~60 lines of headroom' }],
   ['(root)', { ceiling: 1100, note: '~170 lines of headroom — files with no feature directory' }],
 ]);
 
