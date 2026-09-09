@@ -319,7 +319,7 @@
 /* `.shell-banner` (index.css) supplies the frame; this is only the accent ink that tells it apart
    from the save-failure banner sharing the same slot and geometry. */
 .repair-notice {
-  border-left: 3px solid var(--accent);
+  border-left: 4px solid var(--accent);
 }
 
 .repair-notice__title {
@@ -343,7 +343,7 @@
 /* `.shell-banner` (index.css) supplies the frame. The app's danger ink, matching every other
    destructive affordance, is the only thing this adds. */
 .save-banner {
-  border-left: 3px solid var(--danger);
+  border-left: 4px solid var(--danger);
 }
 
 .save-banner__title {
