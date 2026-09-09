@@ -42,6 +42,7 @@ export const MapImage = memo(function MapImage({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
     >
+      <span className="map-canvas__map-name micro-label">{map.name}</span>
       {media.kind === 'ready' ? (
         <img
           className="map-canvas__image"

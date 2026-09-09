@@ -27,7 +27,7 @@ export function MapList({ project }: { project: ProjectFile }): ReactElement {
 
   return (
     <div className="map-list">
-      <MapImportButton label="Import map" />
+      <MapImportButton label="Import a map" />
       <ul className="map-list__items">
         {project.maps.map((map) => (
           <li key={map.id} className="map-list__item row-actions-host">
@@ -97,7 +97,10 @@ function MapRow({
         title={`Jump the canvas to ${map.name}`}
         onClick={onFocus}
       >
-        {map.name}
+        <span className="map-list__label">{map.name}</span>
+        <span className="map-list__size">
+          {map.width}&times;{map.height}
+        </span>
       </button>
       <RowActions>
         <button

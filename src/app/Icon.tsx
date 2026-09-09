@@ -136,10 +136,29 @@ const ICON = {
       <path d="M19 5v14" />
     </>
   ),
+  pointer: <path d="M4 3.5 19 11l-6.5 1.8L10.6 19z" />,
+  'pin-plus': (
+    <>
+      <path d="M12 21s6-5.7 6-10a6 6 0 1 0-12 0c0 4.3 6 10 6 10" />
+      <path d="M12 8v5" />
+      <path d="M9.5 10.5h5" />
+    </>
+  ),
+  polygon: <path d="M12 3 21 9.5 17.5 20h-11L3 9.5z" />,
+  move: (
+    <>
+      <path d="M12 3v18" />
+      <path d="M3 12h18" />
+      <path d="M9 6l3-3 3 3" />
+      <path d="M9 18l3 3 3-3" />
+      <path d="M6 9l-3 3 3 3" />
+      <path d="M18 9l3 3-3 3" />
+    </>
+  ),
   folder: <path d="M4 20a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h4.5l2 3H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2z" />,
 }
 
-type IconName = keyof typeof ICON
+export type IconName = keyof typeof ICON
 
 /**
  * The picture on an icon-only button. Always decorative: the button it sits in carries the

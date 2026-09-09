@@ -54,6 +54,7 @@ import {
   reindexMovedZone,
 } from './zone-index.ts'
 import { Icon } from '../app/Icon.tsx'
+import type { IconName } from '../app/Icon.tsx'
 import './MapScreen.css'
 
 type CanvasRoute = Extract<Route, { kind: 'canvas' }>
@@ -518,15 +519,18 @@ export function MapScreen({
         <aside className="map-screen__sidebar panel">
           <h1 className="visually-hidden">Canvas</h1>
           <div className="map-screen__tools">
-            <button
-              type="button"
-              className="button"
-              aria-label="Display options"
-              title="Display options"
-              onClick={() => setDisplayDialogOpen(true)}
-            >
-              <Icon name="sliders" />
-            </button>
+            <div className="map-screen__tools-head">
+              <p className="micro-label">Tool</p>
+              <button
+                type="button"
+                className="button"
+                aria-label="Display options"
+                title="Display options"
+                onClick={() => setDisplayDialogOpen(true)}
+              >
+                <Icon name="sliders" />
+              </button>
+            </div>
             <ToolPicker tool={tool} onChange={setTool} />
           </div>
           <details
@@ -540,7 +544,9 @@ export function MapScreen({
             }}
           >
             <summary className="map-list-disclosure__summary micro-label disclosure-summary">
+              <span className="map-list-disclosure__chevron" aria-hidden="true" />
               Zones
+              <span className="map-list-disclosure__count">{project.zones.length}</span>
             </summary>
             <ZoneList project={project} selectedId={selectedZoneId} counts={zoneCounts} />
           </details>
@@ -555,7 +561,9 @@ export function MapScreen({
             }}
           >
             <summary className="map-list-disclosure__summary micro-label disclosure-summary">
+              <span className="map-list-disclosure__chevron" aria-hidden="true" />
               Maps
+              <span className="map-list-disclosure__count">{project.maps.length}</span>
             </summary>
             <MapList project={project} />
           </details>
@@ -697,30 +705,34 @@ function withZonePreview(zones: Zone[], drag: ZoneDragPreview | null): readonly 
 // constraint, which lands as `unknown` and throws away the brand.
 // `key` is a single unmodified letter — matched by the global listener above and printed by
 // ToolPicker's button (#42's "discoverable without documentation").
-const TOOLS: readonly { tool: CanvasTool; label: string; hint: string; key: string }[] = [
+const TOOLS: readonly { tool: CanvasTool; label: string; hint: string; key: string; icon: IconName }[] = [
   {
     tool: { kind: 'inspect' },
     label: 'Inspect',
     hint: 'Pan the canvas and select pins or zones',
     key: 'i',
+    icon: 'pointer',
   },
   {
     tool: { kind: 'place-dialogue' },
     label: 'Place dialogue',
     hint: 'Click a map to log a line',
     key: 'p',
+    icon: 'pin-plus',
   },
   {
     tool: { kind: 'draw-zone' },
     label: 'Draw zone',
     hint: 'Drag out a rectangle, drag a zone to move it, or its grips to resize it',
     key: 'z',
+    icon: 'polygon',
   },
   {
     tool: { kind: 'move-map' },
     label: 'Move map',
     hint: 'Drag a map to arrange the canvas',
     key: 'm',
+    icon: 'move',
   },
 ]
 
@@ -739,12 +751,14 @@ function ToolPicker({
       options={TOOLS}
       optionKey={(entry) => entry.tool.kind}
       selectedKey={tool.kind}
-      buttonClassName="tool-picker__button segmented-button"
+      buttonClassName="tool-picker__button"
       onChange={(entry) => onChange(entry.tool)}
       optionTitle={(entry) => `${entry.hint} (${entry.key.toUpperCase()})`}
       renderOption={(entry) => (
         <>
-          {entry.label} <span className="tool-picker__key">{entry.key.toUpperCase()}</span>
+          <Icon name={entry.icon} />
+          <span className="tool-picker__label">{entry.label}</span>
+          <kbd>{entry.key.toUpperCase()}</kbd>
         </>
       )}
     />

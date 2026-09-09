@@ -20,7 +20,10 @@
 .map-screen__sidebar {
   width: 16rem;
   flex: none;
-  /* Scrolls on its own, so a project with many maps never pushes the canvas off screen. */
+  /* Scrolls on its own, so a project with many maps never pushes the canvas off screen. A flex
+     column so the relevance legend can claim the foot of the rail with margin-top: auto. */
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   padding: var(--space-3);
 }
@@ -92,21 +95,35 @@
 .map-list__name {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
   font: inherit;
   text-align: left;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text);
   background: none;
-  border: 1px solid transparent;
+  border: none;
   border-radius: var(--radius-2);
   padding: var(--space-1) var(--space-2);
   cursor: pointer;
 }
 
+.map-list__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Its own size is the one fact about a map the rail can state that the canvas cannot. */
+.map-list__size {
+  margin-left: auto;
+  font-size: var(--text-2xs);
+  color: var(--text-muted);
+}
+
 .map-list__name:hover {
-  background: var(--surface-2);
+  background: var(--surface-well);
 }
 
 /* The rename form and delete confirm use `EditableRow`'s default classes here (no override) —
@@ -117,15 +134,19 @@
 
 /* `.zone-list` (index.css) supplies the layout. */
 
-/* A rule rather than a gap between the two sidebar lists: they are different subjects, and
-   the maps list ends with an import button that would otherwise read as belonging to zones. */
+/* A hairline rather than a gap between the two rail lists: they are different subjects, and the
+   maps list ends with an import row that would otherwise read as belonging to zones. A hairline
+   *inside* a panel is not a region divider — see `.panel` in index.css. */
 .map-list-disclosure {
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
   padding-top: var(--space-4);
   border-top: 1px solid var(--border);
 }
 
 .map-list-disclosure__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--text-muted);
 }
 
@@ -133,18 +154,44 @@
   color: var(--text);
 }
 
+/* Drawn rather than imported: one caret is not worth a glyph in the icon set, and a rotation is
+   the whole open/closed state. */
+.map-list-disclosure__chevron {
+  flex: none;
+  width: 0;
+  height: 0;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: rotate var(--duration-fast) var(--ease-standard);
+}
+
+.map-list-disclosure[open] .map-list-disclosure__chevron {
+  rotate: 90deg;
+}
+
+.map-list-disclosure__count {
+  margin-left: auto;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  background: var(--surface-well);
+  color: var(--text);
+  letter-spacing: 0;
+}
+
 /* `.hint-text` (index.css) supplies the margin/colour; the size is a step up. */
 .zone-list__empty {
   font-size: var(--text-xs);
 }
 
-/* The row's primary action, carrying the zone's own colour as a left edge so the sidebar and
-   the canvas can be matched up at a glance. */
+/* The row's primary action, carrying the zone's own colour as a dot so the rail and the canvas
+   can be matched up at a glance. Selection here is sage, not terracotta: picking a zone out of a
+   list is navigation, and the accent is reserved for whatever is live. */
 .zone-list__name {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--space-2);
   font: inherit;
   font-size: var(--text-sm);
@@ -152,24 +199,30 @@
   overflow: hidden;
   white-space: nowrap;
   color: var(--text);
-  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.14);
-  border: 1px solid transparent;
-  border-left: 3px solid oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
+  background: none;
+  border: none;
   border-radius: var(--radius-2);
   padding: var(--space-1) var(--space-2);
   cursor: pointer;
-  transition:
-    background-color var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.zone-list__name::before {
+  content: '';
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-round);
+  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
 }
 
 .zone-list__name:hover {
-  background: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.28);
+  background: var(--surface-well);
 }
 
 .zone-list__name[aria-current='true'] {
-  border-color: var(--accent);
-  border-left-color: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
+  background: var(--accent-2-soft);
+  font-weight: 600;
 }
 
 /* Pushed to the right edge of the row, and given the ellipsis budget the name gives up: a
@@ -202,8 +255,16 @@
   margin-bottom: var(--space-4);
 }
 
-.map-screen__tools > .button {
-  width: 100%;
+.map-screen__tools-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.map-screen__tools-head .button {
+  width: 26px;
+  min-height: 26px;
 }
 
 /* Vertical now — a 16rem rail has no room for four tools in a row. `arrowStep` already
@@ -215,46 +276,85 @@
   gap: 1px;
 }
 
-/* The `.segmented-button` base (index.css) rounds the first/last child's *left/right* corners
-   for a horizontal strip; a vertical one wants its first/last child's *top/bottom* corners
-   instead, at equal specificity so declaration order in the cascade decides — this file loads
-   after index.css. */
-.tool-picker__button:first-child {
-  border-radius: var(--radius-2) var(--radius-2) 0 0;
-}
-
-.tool-picker__button:last-child {
-  border-radius: 0 0 var(--radius-2) var(--radius-2);
-}
-
-/* The `.segmented-button` base (index.css) supplies the shape and states; only the size and
-   alignment differ here — full width and left-aligned text, since a vertical strip has no
-   neighbour to center against. */
+/* Not `.segmented-button`: four rows stacked with gaps between them are a list of tools, not one
+   strip cut into segments, and the base's shared first/last-child rounding outranks anything a
+   single class here could say. */
 .tool-picker__button {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   text-align: left;
-  font-size: var(--text-sm);
-  padding: var(--space-1) var(--space-3);
+  font: inherit;
+  font-family: var(--font-heading);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-radius: var(--radius-2);
+  padding: var(--space-2);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+.tool-picker__button .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.tool-picker__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-picker__button:hover:not([aria-checked='true']) {
+  color: var(--text);
+  background: var(--surface-well);
+}
+
+.tool-picker__button:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.tool-picker__button[aria-checked='true'] {
+  color: var(--accent-contrast);
+  background: var(--accent);
 }
 
 /* The one-letter shortcut, printed on the button itself so it needs no separate legend. */
-.tool-picker__key {
-  margin-left: var(--space-1);
-  padding: 0 3px;
-  border-radius: var(--radius-1);
-  background: rgba(255, 255, 255, 0.12);
-  font-size: var(--text-2xs);
-  font-family: var(--font-mono);
+.tool-picker__button kbd {
+  background: none;
+  border-color: var(--border);
+  color: var(--text-muted);
 }
 
-.tool-picker__button[aria-checked='true'] .tool-picker__key {
-  background: rgba(0, 0, 0, 0.18);
+.tool-picker__button[aria-checked='true'] kbd {
+  background: rgb(255 255 255 / 0.25);
+  border-color: transparent;
+  color: var(--accent-contrast);
 }
 
 /* ---- import ---- */
 
 /* `.map-import` and `.map-import__label[data-importing]` (index.css) supply the layout and the
    busy state. */
+
+/* An affordance, not a verb: dashed says "there could be one more here" without claiming the
+   rail's single primary. */
+.map-import__label.button--primary {
+  width: 100%;
+  justify-content: center;
+  color: var(--accent-ink);
+  background: none;
+  border: 1px dashed var(--border-strong);
+}
+
+.map-import__label.button--primary:hover {
+  border-color: var(--accent);
+}
 
 /* :has() rather than a sibling combinator — the label precedes the input in the DOM, and
    Chromium-only means there is no reason to reorder the markup for a selector's sake. The

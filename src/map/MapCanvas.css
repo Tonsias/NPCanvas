@@ -7,8 +7,18 @@
   touch-action: none;
   cursor: grab;
   user-select: none;
+  /* A field notebook's ruled ground, not a transparency checkerboard: nothing on this canvas is
+     transparent, and the squares were saying otherwise. */
   background:
-    repeating-conic-gradient(var(--surface-1) 0% 25%, var(--surface-0) 0% 50%) 0 0 / 32px 32px;
+    linear-gradient(color-mix(in srgb, var(--border) 60%, transparent) 1px, transparent 1px) 0 0 /
+      40px 40px,
+    linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--border) 60%, transparent) 1px,
+        transparent 1px
+      )
+      0 0 / 40px 40px,
+    var(--surface-well);
 }
 
 .map-canvas:active {
@@ -84,6 +94,32 @@
   transform-origin: 0 0;
 }
 
+/* A plate on the ground rather than a bare bitmap. `overflow: hidden` is what makes the radius
+   reach the image; the pins are in their own layer, so nothing that must escape is clipped. */
+.map-canvas__map {
+  overflow: hidden;
+  border-radius: var(--radius-2);
+  outline: calc(1px / (var(--map-zoom) * var(--map-scale))) solid var(--border-strong);
+}
+
+/* Counter-scaled like a pin, and gone at the same zoom a pin's label is: below that threshold a
+   screen-constant label is several times the width of the map it names. */
+.map-canvas__map-name {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  transform: scale(calc(1 / (var(--map-zoom) * var(--map-scale))));
+  padding: var(--space-2) var(--space-3);
+  color: var(--text);
+  paint-order: stroke;
+  text-shadow: 0 0 3px var(--line-halo);
+}
+
+.map-canvas__world[data-pin-labels='hidden'] .map-canvas__map-name {
+  display: none;
+}
+
 /* Divided by the same product the pins counter-scale by, so the outline is the same few
    screen pixels thick whatever the map scale and canvas zoom are. */
 .map-canvas__map[data-selected='true'] {
@@ -115,15 +151,16 @@
 
 .map-canvas__hud {
   position: absolute;
-  right: var(--space-3);
-  bottom: var(--space-3);
+  right: 16px;
+  bottom: 16px;
   display: flex;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-1) var(--space-2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-2);
+  border-radius: var(--radius-round);
   background: var(--surface-1);
+  box-shadow: var(--shadow-panel);
   font-size: var(--text-xs);
 }
 
@@ -139,14 +176,15 @@
    covering the controls the user is about to reach for again. */
 .map-canvas__rejected {
   position: absolute;
-  left: var(--space-3);
-  bottom: var(--space-3);
+  left: 16px;
+  bottom: 16px;
   max-width: 22rem;
   margin: 0;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--border);
-  border-radius: var(--radius-2);
+  border-radius: var(--radius-round);
   background: var(--surface-1);
+  box-shadow: var(--shadow-panel);
   color: var(--text-muted);
   font-size: var(--text-xs);
 }
@@ -206,9 +244,10 @@
 /* Fill and stroke are one hue at two alphas — see zoneHueStyle. The stroke width is in screen
    pixels rather than map units thanks to vector-effect on the element. */
 .zone-layer__shape {
-  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.16);
-  stroke: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
+  fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.17);
+  stroke: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue) / 0.6);
   stroke-width: 2;
+  stroke-linejoin: round;
 }
 
 .zone-layer__shape[data-selected='true'] {
@@ -225,9 +264,10 @@
   transform-box: fill-box;
   transform-origin: center;
   transform: scale(calc(1 / (var(--map-zoom) * var(--map-scale))));
-  font-family: var(--font-sans);
+  font-family: var(--font-body);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   fill: oklch(var(--hue-mark-l) var(--hue-mark-c) var(--zone-hue));
   /* The label sits over arbitrary map imagery, so it carries its own contrast rather than
      trusting the ground beneath it. */
@@ -332,9 +372,13 @@
   stroke-width: calc(5px / (var(--map-zoom) * var(--map-scale)));
 }
 
+/* Dotted, not solid: a walked route is a footpath on a map, and the dashes are what keep it from
+   reading as a drawn vector the way a reference edge does. */
 .trail-layer__path {
   stroke: var(--trail);
-  stroke-width: calc(3px / (var(--map-zoom) * var(--map-scale)));
+  stroke-width: calc(2.5px / (var(--map-zoom) * var(--map-scale)));
+  stroke-dasharray: calc(1px / (var(--map-zoom) * var(--map-scale)))
+    calc(9px / (var(--map-zoom) * var(--map-scale)));
 }
 
 /* One direction marker per segment. vector-effect above leaves the line's *stroke* unscaled but
@@ -379,7 +423,9 @@
 
 .reference-layer__path {
   stroke: var(--reference);
-  stroke-width: calc(3px / (var(--map-zoom) * var(--map-scale)));
+  stroke-width: calc(1.8px / (var(--map-zoom) * var(--map-scale)));
+  stroke-dasharray: calc(6px / (var(--map-zoom) * var(--map-scale)))
+    calc(5px / (var(--map-zoom) * var(--map-scale)));
 }
 
 .reference-layer__arrow {
@@ -432,7 +478,10 @@
   font-size: var(--text-2xs);
   line-height: 1;
   color: var(--text);
-  border: 1px solid var(--border-strong);
+  /* The ring is the panel's own colour rather than a border colour: it sits over arbitrary map
+     imagery, and a fixed light/dark ground is the only thing that separates a pin from it in
+     both themes. */
+  border: 2.5px solid var(--surface-1);
   border-radius: var(--radius-round);
   padding: 3px var(--space-3) 3px 3px;
   display: inline-flex;
@@ -486,7 +535,6 @@
   /* Relevance hues sit at a fixed 60% lightness in both themes, so the ink on top of them has
      to be fixed too: var(--text) is near-white in the dark theme and would disappear. */
   color: var(--ink-on-hue);
-  border-color: rgba(0, 0, 0, 0.3);
 }
 
 /* A filter rather than a background swap, because the background is an inline style now and
@@ -500,6 +548,7 @@
    style and offset are the base rule's, which is what makes this transition. */
 .pin__marker[data-selected='true'] {
   outline-color: var(--accent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 /* A suggestion is not yet a Dialogue — dashed and hollow, never the pin's own solid fill, so a
@@ -515,7 +564,7 @@
   height: 1.25rem;
   border-radius: var(--radius-round);
   border: 2px dashed var(--accent);
-  background: transparent;
+  background: var(--surface-1);
 }
 
 /* Transparent, so the bands run the full width of the pin behind the glyph. Only the
