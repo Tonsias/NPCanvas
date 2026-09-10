@@ -23,7 +23,10 @@ const CEILINGS = new Map([
   // due for its own M21-style reset once M23 is cut.
   ['capture', { ceiling: 9200, note: '~900 lines of headroom for the rest of M23' }],
   ['project', { ceiling: 5800, note: '~540 lines of headroom — the schema and reducer' }],
-  ['insights', { ceiling: 3900, note: '~430 lines of headroom' }],
+  // Bumped by the NPC dossier's line carousel: "Who said it" gained a chip-driven filter of its
+  // own (dossier-filter.ts and its test) and a paged line view, replacing a list that grew as
+  // long as the NPC was talkative. Covers that feature, not a further milestone.
+  ['insights', { ceiling: 4100, note: '~105 lines of headroom — the dossier carousel' }],
   ['cinema', { ceiling: 3200, note: "M22's new feature directory — room for the whole milestone" }],
   ['dialogue', { ceiling: 2700, note: '~390 lines of headroom' }],
   // Bumped by the UI rebuild: the spine is the one piece of chrome every screen hangs off, and

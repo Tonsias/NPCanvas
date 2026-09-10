@@ -1,3 +1,5 @@
+import { EMPTY_DOSSIER_FILTER } from '../insights/dossier-filter.ts'
+import type { DossierFilter } from '../insights/dossier-filter.ts'
 import { EMPTY_FILTER } from '../insights/filters.ts'
 import type { DialogueFilter } from '../insights/filters.ts'
 import type { BucketUnit } from '../insights/timeline-buckets.ts'
@@ -50,6 +52,8 @@ export type InsightsViewState = {
   filter: DialogueFilter
   /** The dossier's selected NPC key — `null` defers to its own top-of-list fallback. */
   dossierKey: string | null
+  /** Narrows the selected NPC's line carousel only, on top of `filter` — see `dossier-filter.ts`. */
+  dossierFilter: DossierFilter
   /** The open bucket's `start` instant (ms) — not an index, see `Timeline` — `null` shows no detail. */
   timelineActive: number | null
   /** The grain the timeline is read at; `null` is "Auto", deferring to `autoBucketUnit`. */
@@ -79,6 +83,12 @@ export const INITIAL_VIEW_STATE: ViewState = {
     panelWidth: null,
   },
   cinema: { playheadIndex: 0, questRailWidth: null, railWidth: null },
-  insights: { filter: EMPTY_FILTER, dossierKey: null, timelineActive: null, timelineUnit: null },
+  insights: {
+    filter: EMPTY_FILTER,
+    dossierKey: null,
+    dossierFilter: EMPTY_DOSSIER_FILTER,
+    timelineActive: null,
+    timelineUnit: null,
+  },
   quests: { mode: { kind: 'idle' }, sectionsOpen: { open: true, done: false }, expanded: [] },
 }

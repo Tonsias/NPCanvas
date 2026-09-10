@@ -30,8 +30,8 @@ export function MediaGallery({
     if (next !== undefined) onSelect(next.id)
   }
 
-  // Bound on the container, not window — the dossier renders one gallery per line, and a
-  // global listener would page every one at once.
+  // Bound on the container, not window — several galleries can share a screen (and the NPC
+  // dossier nests one inside its own line carousel, which pages on the same two keys).
   function onKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
     if (!paged || isTextFieldFocused()) return
     if (event.key === 'ArrowLeft') page(-1)

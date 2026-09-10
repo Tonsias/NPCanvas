@@ -1,10 +1,8 @@
-import type { ReactElement } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { Disclosure } from '../app/Disclosure.tsx'
-import { formatRoute } from '../app/route.ts'
 import { RowActions } from '../app/RowActions.tsx'
 import { formatSpokenAt, resolveZones, zoneLabel } from '../dialogue-row/dialogue-summary.ts'
-import { MediaGallery } from '../media/MediaGallery.tsx'
 import { zoneHueStyle } from '../map/zone-style.ts'
 import { indexQuestsByDialogue } from '../quest/quest-index.ts'
 import { questAccentStyle } from '../quest/quest-style.ts'
@@ -13,15 +11,21 @@ import { subsetByTimeAsc } from '../dialogue/dialogue-order.ts'
 import type {
   Dialogue,
   DialogueId,
-  MediaId,
   Quest,
   RelevanceTag,
   Zone,
   ZoneId,
 } from '../project/types.ts'
+import { NpcLines } from './NpcLines.tsx'
 import { SegmentDefs, SegmentFill, SegmentLegend, UNKNOWN_FILL } from './SegmentLegend.tsx'
-import { ZoneChips } from './ZoneChips.tsx'
-import { npcKey, npcLabel } from './filters.ts'
+import type { DossierFilter } from './dossier-filter.ts'
+import {
+  EMPTY_DOSSIER_FILTER,
+  applyDossierFilter,
+  isEmptyDossierFilter,
+  pruneDossierFilter,
+} from './dossier-filter.ts'
+import { npcKey, npcLabel, toggleFilterValue } from './filters.ts'
 import type { SegmentKey, Tally } from './relevance-segments.ts'
 import {
   emptyTally,
@@ -53,7 +57,8 @@ export function NpcDossier({
   zoneIndex,
   relevanceTags,
   selectedKey,
-  onSelectedKeyChange,
+  filter,
+  onChange,
 }: {
   dialogues: readonly Dialogue[]
   quests: readonly Quest[]
@@ -61,15 +66,21 @@ export function NpcDossier({
   zoneIndex: ReadonlyMap<DialogueId, ZoneId[]>
   relevanceTags: readonly RelevanceTag[]
   selectedKey: string | null
-  onSelectedKeyChange: (key: string | null) => void
+  filter: DossierFilter
+  onChange: (next: { key: string | null; filter: DossierFilter }) => void
 }): ReactElement {
+  const questsByDialogue = useMemo(() => indexQuestsByDialogue(quests), [quests])
   const profiles = useMemo(
-    () => buildProfiles(dialogues, quests, zonesById, zoneIndex, relevanceTags),
-    [dialogues, quests, zonesById, zoneIndex, relevanceTags],
+    () => buildProfiles(dialogues, questsByDialogue, zonesById, zoneIndex, relevanceTags),
+    [dialogues, questsByDialogue, zonesById, zoneIndex, relevanceTags],
   )
 
   // A key the filter or a rename has since removed falls back to the top of the list.
   const selected = profiles.find((profile) => profile.key === selectedKey) ?? profiles[0] ?? null
+  // Pruned here too, not only in the click handler below: the global filter can retire the
+  // selected NPC without anyone clicking, and the chips must never disagree with what is applied.
+  const offered = selected === null ? EMPTY_DOSSIER_FILTER : offeredBy(selected, relevanceTags)
+  const effective = pruneDossierFilter(filter, offered)
 
   return (
     <section className="insights__panel panel" aria-label="NPC dossier">
@@ -101,7 +112,12 @@ export function NpcDossier({
                   type="button"
                   className="npc-dossier__entry"
                   aria-pressed={profile === selected}
-                  onClick={() => onSelectedKeyChange(profile.key)}
+                  onClick={() =>
+                    onChange({
+                      key: profile.key,
+                      filter: pruneDossierFilter(filter, offeredBy(profile, relevanceTags)),
+                    })
+                  }
                 >
                   <span className="npc-dossier__name">{profile.label}</span>
                   <span className="npc-dossier__count hint-text">{profile.dialogues.length}</span>
@@ -117,14 +133,18 @@ export function NpcDossier({
 
           {selected !== null && (
             <Dossier
-              // Remounts on selection, resetting the rename draft.
+              // Remounts on selection, resetting the rename draft and the line carousel.
               key={selected.key}
               profile={selected}
               knownKeys={profiles.map((profile) => profile.key)}
               zonesById={zonesById}
               zoneIndex={zoneIndex}
+              questsByDialogue={questsByDialogue}
               relevanceTags={relevanceTags}
-              onRenamed={onSelectedKeyChange}
+              offered={offered}
+              filter={effective}
+              onFilterChange={(filter) => onChange({ key: selected.key, filter })}
+              onRenamed={(key) => onChange({ key, filter: effective })}
             />
           )}
         </div>
@@ -138,20 +158,34 @@ function Dossier({
   knownKeys,
   zonesById,
   zoneIndex,
+  questsByDialogue,
   relevanceTags,
+  offered,
+  filter,
+  onFilterChange,
   onRenamed,
 }: {
   profile: NpcProfile
   knownKeys: readonly string[]
   zonesById: ReadonlyMap<ZoneId, Zone>
   zoneIndex: ReadonlyMap<DialogueId, ZoneId[]>
+  questsByDialogue: ReadonlyMap<DialogueId, Quest[]>
   relevanceTags: readonly RelevanceTag[]
+  offered: DossierFilter
+  filter: DossierFilter
+  onFilterChange: (filter: DossierFilter) => void
   onRenamed: (key: string) => void
 }): ReactElement {
   const first = profile.dialogues[0]
   const last = profile.dialogues[profile.dialogues.length - 1]
   const labels = segmentLabel(relevanceTags)
   const colors = segmentColor(relevanceTags)
+  // The three chip runs narrow only the carousel below them; the facts and the profile bar stay
+  // the whole NPC, so the chips read as "of these lines, show me…" rather than as a second scope.
+  const lines = useMemo(
+    () => applyDossierFilter(profile.dialogues, filter, zoneIndex, questsByDialogue),
+    [profile.dialogues, filter, zoneIndex, questsByDialogue],
+  )
 
   return (
     <article className="npc-dossier__detail">
@@ -170,20 +204,24 @@ function Dossier({
           tags={relevanceTags}
           className="npc-dossier__profile"
         />
-        <ul className="npc-dossier__chips">
-          {segmentKeys(relevanceTags)
-            .filter((segment) => (profile.tally.counts.get(segment) ?? 0) > 0)
-            .map((segment) => (
-              <li key={segment} className="npc-dossier__chip">
+        <ChipRow
+          items={offered.relevance}
+          valueOf={(segment) => segment}
+          selected={filter.relevance}
+          onChange={(relevance) => onFilterChange({ ...filter, relevance })}
+          chip={(segment) => ({
+            label: (
+              <>
                 <span
                   className="dot-swatch"
                   style={{ background: colors.get(segment) ?? 'transparent' }}
                   aria-hidden="true"
                 />
                 {labels.get(segment) ?? ''} {profile.tally.counts.get(segment) ?? 0}
-              </li>
-            ))}
-        </ul>
+              </>
+            ),
+          })}
+        />
       </section>
 
       <section className="npc-dossier__section" aria-label="Zones encountered in">
@@ -191,13 +229,13 @@ function Dossier({
         {profile.zones.length === 0 ? (
           <p className="insights__empty hint-text">Never inside a zone.</p>
         ) : (
-          <ul className="npc-dossier__chips">
-            {profile.zones.map((zone) => (
-              <li key={zone.id} className="hue-chip dialogue-row__zone" style={zoneHueStyle(zone.hue)}>
-                {zoneLabel(zone)}
-              </li>
-            ))}
-          </ul>
+          <ChipRow
+            items={profile.zones}
+            valueOf={(zone) => zone.id}
+            selected={filter.zones}
+            onChange={(zones) => onFilterChange({ ...filter, zones })}
+            chip={(zone) => ({ style: zoneHueStyle(zone.hue), label: zoneLabel(zone) })}
+          />
         )}
       </section>
 
@@ -206,81 +244,82 @@ function Dossier({
         {profile.quests.length === 0 ? (
           <p className="insights__empty hint-text">None of their lines belong to a quest yet.</p>
         ) : (
-          <ul className="npc-dossier__chips">
-            {profile.quests.map((quest) => (
-              <li key={quest.id}>
-                <a
-                  className="npc-dossier__quest"
-                  style={questAccentStyle(quest)}
-                  href={formatRoute({ kind: 'quests', editQuestId: quest.id })}
-                >
-                  {quest.name.trim() === '' ? 'Untitled quest' : quest.name}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <ChipRow
+            items={profile.quests}
+            valueOf={(quest) => quest.id}
+            selected={filter.quests}
+            onChange={(quests) => onFilterChange({ ...filter, quests })}
+            chip={(quest) => ({
+              style: questAccentStyle(quest),
+              label: quest.name.trim() === '' ? 'Untitled quest' : quest.name,
+            })}
+          />
         )}
       </section>
 
-      <ol className="npc-dossier__lines">
-        {profile.dialogues.map((dialogue) => (
-          <li key={dialogue.id}>
-            <NpcLine
-              dialogue={dialogue}
-              label={profile.label}
-              zones={resolveZones(dialogue.id, zoneIndex, zonesById)}
-            />
-          </li>
-        ))}
-      </ol>
+      <section className="npc-dossier__section" aria-label="Lines">
+        <div className="npc-dossier__lines-head">
+          <h4 className="micro-label">
+            {isEmptyDossierFilter(filter) ? 'Lines' : `Lines — ${lines.length} of ${profile.dialogues.length}`}
+          </h4>
+          {!isEmptyDossierFilter(filter) && (
+            <button
+              type="button"
+              className="button"
+              onClick={() => onFilterChange(EMPTY_DOSSIER_FILTER)}
+            >
+              Clear chips
+            </button>
+          )}
+        </div>
+        <NpcLines
+          dialogues={lines}
+          label={profile.label}
+          zonesById={zonesById}
+          zoneIndex={zoneIndex}
+        />
+      </section>
     </article>
   )
 }
 
-function NpcLine({
-  dialogue,
-  label,
-  zones,
+// One run of toggle chips over one field of the dossier filter — three sections, one shape:
+// what the NPC offers, which of it is on, and how a value draws itself. `style` publishes the
+// hue custom property `.hue-chip`'s own recipe (index.css) selects on, so a value without a hue
+// simply passes none.
+function ChipRow<T, V>({
+  items,
+  valueOf,
+  selected,
+  onChange,
+  chip,
 }: {
-  dialogue: Dialogue
-  label: string
-  zones: readonly Zone[]
+  items: readonly T[]
+  valueOf: (item: T) => V
+  selected: readonly V[]
+  onChange: (selected: V[]) => void
+  chip: (item: T) => { style?: CSSProperties; label: ReactNode }
 }): ReactElement {
-  // Each line pages its own pictures independently — a shared current frame would move all at once.
-  const [currentMediaId, setCurrentMediaId] = useState<MediaId | null>(null)
-  const said = dialogue.text.trim()
   return (
-    <article className="npc-line">
-      <header className="npc-line__head">
-        <time className="dialogue-row__when" dateTime={dialogue.spokenAt}>
-          {formatSpokenAt(dialogue.spokenAt)}
-        </time>
-        <span className="dialogue-row__where">
-          <ZoneChips zones={zones} nowhereClassName="dialogue-row__nowhere" />
-        </span>
-        <a
-          className="npc-line__link"
-          href={formatRoute({
-            kind: 'canvas',
-            dialogueId: dialogue.id,
-            focus: { kind: 'map', id: dialogue.mapId },
-          })}
-        >
-          Show on canvas
-        </a>
-      </header>
-      {said !== '' && <p className="npc-line__text">{dialogue.text}</p>}
-      {/* No reorder/remove here — "Show on canvas" is the way to the panel that can edit media. */}
-      <MediaGallery
-        media={dialogue.media}
-        label={label}
-        selectedId={currentMediaId}
-        onSelect={setCurrentMediaId}
-      />
-      {said === '' && dialogue.media.length === 0 && (
-        <p className="npc-line__empty hint-text">No text yet</p>
-      )}
-    </article>
+    <ul className="npc-dossier__chips">
+      {items.map((item) => {
+        const value = valueOf(item)
+        const { style, label } = chip(item)
+        return (
+          <li key={String(value)}>
+            <button
+              type="button"
+              className={style === undefined ? 'npc-dossier__chip' : 'npc-dossier__chip hue-chip'}
+              style={style}
+              aria-pressed={selected.includes(value)}
+              onClick={() => onChange(toggleFilterValue(selected, value))}
+            >
+              {label}
+            </button>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
@@ -432,15 +471,26 @@ function SegmentBar({
   )
 }
 
+// What this NPC can answer — the chips drawn below, and the set a filter carried over from the
+// previous NPC is narrowed to.
+function offeredBy(profile: NpcProfile, relevanceTags: readonly RelevanceTag[]): DossierFilter {
+  return {
+    relevance: segmentKeys(relevanceTags).filter(
+      (segment) => (profile.tally.counts.get(segment) ?? 0) > 0,
+    ),
+    zones: profile.zones.map((zone) => zone.id),
+    quests: profile.quests.map((quest) => quest.id),
+  }
+}
+
 // Blank names are a group of their own, not dropped — renamable like any other.
 function buildProfiles(
   dialogues: readonly Dialogue[],
-  quests: readonly Quest[],
+  questsByDialogue: ReadonlyMap<DialogueId, Quest[]>,
   zonesById: ReadonlyMap<ZoneId, Zone>,
   zoneIndex: ReadonlyMap<DialogueId, ZoneId[]>,
   relevanceTags: readonly RelevanceTag[],
 ): NpcProfile[] {
-  const questsByDialogue = indexQuestsByDialogue(quests)
   const byKey = new Map<string, Dialogue[]>()
   for (const dialogue of dialogues) {
     const key = npcKey(dialogue)

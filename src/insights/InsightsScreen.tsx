@@ -4,6 +4,7 @@ import { formatRoute } from '../app/route.ts'
 import type { InsightsViewState } from '../app/view-state.ts'
 import { indexDialoguesByZone } from '../map/zone-index.ts'
 import type { ProjectFile, Zone, ZoneId } from '../project/types.ts'
+import type { DossierFilter } from './dossier-filter.ts'
 import { FilterBar } from './FilterBar.tsx'
 import { NpcDossier } from './NpcDossier.tsx'
 import { RelevanceBreakdown } from './RelevanceBreakdown.tsx'
@@ -22,11 +23,12 @@ export function InsightsScreen({
   viewState: InsightsViewState
   onViewStateChange: (viewState: InsightsViewState) => void
 }): ReactElement {
-  const { filter, dossierKey, timelineActive, timelineUnit } = viewState
+  const { filter, dossierKey, dossierFilter, timelineActive, timelineUnit } = viewState
   const setFilter = (filter: InsightsViewState['filter']): void =>
     onViewStateChange({ ...viewState, filter })
-  const setDossierKey = (dossierKey: InsightsViewState['dossierKey']): void =>
-    onViewStateChange({ ...viewState, dossierKey })
+  // One update, since switching NPC also narrows the chip filter to what the next one offers.
+  const setDossier = (next: { key: string | null; filter: DossierFilter }): void =>
+    onViewStateChange({ ...viewState, dossierKey: next.key, dossierFilter: next.filter })
   const setTimelineActive = (timelineActive: InsightsViewState['timelineActive']): void =>
     onViewStateChange({ ...viewState, timelineActive })
   // Changing the grain closes the open bucket in the same update — timelineActive is an instant
@@ -97,7 +99,8 @@ export function InsightsScreen({
             zoneIndex={zoneIndex}
             relevanceTags={project.relevanceTags}
             selectedKey={dossierKey}
-            onSelectedKeyChange={setDossierKey}
+            filter={dossierFilter}
+            onChange={setDossier}
           />
         </>
       )}

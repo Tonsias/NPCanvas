@@ -502,12 +502,13 @@ body {
   border-top: 1px solid var(--border);
 }
 
-/* A one-column stack — a zone list, the merge form, a timeline detail, an NPC-dossier section —
-   four unrelated blocks reaching for the same three declarations. */
+/* A one-column stack — a zone list, the merge form, a timeline detail, an NPC-dossier section,
+   the dossier's line carousel — unrelated blocks reaching for the same three declarations. */
 .zone-list,
 .dialogue-merge,
 .timeline__detail,
-.npc-dossier__section {
+.npc-dossier__section,
+.npc-lines {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -529,7 +530,8 @@ body {
 .dialogue-references__picking,
 .dialogue-quests__bar,
 .quest-board__group-heading,
-.timeline__detail-title {
+.timeline__detail-title,
+.npc-dossier__lines-head {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -810,9 +812,19 @@ kbd {
   border-radius: var(--radius-1);
 }
 
-/* A thumbnail in a horizontally-scrolling strip — `.media-gallery__strip` and
-   `.pending-capture-list__strip` both page through a run of frames one picture at a time, so the
-   thumbnail that jumps to one is the same shape in both. */
+/* The scroller a run of jump-to marks sits in: pictures in a gallery, held frames awaiting
+   placement, an NPC's lines. It scrolls inside itself so a long run never widens its column. */
+.media-gallery__strip,
+.pending-capture-list__strip,
+.npc-lines__strip {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+}
+
+/* A thumbnail in one of those strips — the two picture strips page through a run of frames one
+   at a time, so the thumbnail that jumps to one is the same shape in both. */
 .strip-thumb {
   flex: none;
   display: block;
@@ -828,9 +840,10 @@ kbd {
   background: var(--surface-3);
 }
 
-/* The frame being shown, marked on the strip rather than only in the counter — the strip is how
-   a reader jumps, so it has to say where they are. */
-.strip-thumb[aria-current='true'] {
+/* The frame or line being shown, marked on the strip rather than only in the counter — the strip
+   is how a reader jumps, so it has to say where they are. */
+.strip-thumb[aria-current='true'],
+.npc-lines__tick[aria-current='true'] {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
