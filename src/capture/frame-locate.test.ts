@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   LOCATE_ACCEPT,
   LOCATE_MARGIN,
+  LOCATE_STEP,
   MIN_OVERLAP,
   locateWindow,
+  prepareMask,
   type FrameMask,
   type WindowMatch,
 } from './frame-locate.ts'
@@ -36,12 +38,28 @@ function flip(source: FrameMask, x: number, y: number): FrameMask {
   return { width: source.width, height: source.height, mask }
 }
 
-// Written independently of `frame-locate.ts`'s coarse-to-fine search — the test that matters is
-// that the shortcut finds the same peak as scoring every valid offset directly.
+function locate(window: FrameMask, map: FrameMask): WindowMatch | null {
+  return locateWindow(prepareMask(window), prepareMask(map))
+}
+
+// Written independently of `frame-locate.ts` — same two rules (a block with no edge in it is not
+// compared; the score is agreement over the window's own valid pixels), scored offset by offset.
 function exhaustiveLocate(window: FrameMask, map: FrameMask): WindowMatch | null {
+  const blocked = (frame: FrameMask, x: number, y: number): boolean => {
+    const blockX = Math.floor(x / LOCATE_STEP) * LOCATE_STEP
+    const blockY = Math.floor(y / LOCATE_STEP) * LOCATE_STEP
+    for (let row = blockY; row < Math.min(blockY + LOCATE_STEP, frame.height); row++) {
+      for (let column = blockX; column < Math.min(blockX + LOCATE_STEP, frame.width); column++) {
+        if (frame.mask[row * frame.width + column] === 1) return true
+      }
+    }
+    return false
+  }
+  const align = (value: number): number => Math.floor(value / LOCATE_STEP) * LOCATE_STEP
+
   let best: WindowMatch | null = null
-  for (let y = -window.height + 1; y <= map.height - 1; y++) {
-    for (let x = -window.width + 1; x <= map.width - 1; x++) {
+  for (let y = align(-window.height + 1); y <= map.height - 1; y += LOCATE_STEP) {
+    for (let x = align(-window.width + 1); x <= map.width - 1; x += LOCATE_STEP) {
       const left = Math.max(x, 0)
       const top = Math.max(y, 0)
       const right = Math.min(x + window.width, map.width)
@@ -50,19 +68,23 @@ function exhaustiveLocate(window: FrameMask, map: FrameMask): WindowMatch | null
       const overlapHeight = bottom - top
       if (overlapWidth <= 0 || overlapHeight <= 0) continue
 
-      const overlapArea = overlapWidth * overlapHeight
       const bestPossible = Math.min(window.width, map.width) * Math.min(window.height, map.height)
-      if (overlapArea < MIN_OVERLAP * bestPossible) continue
+      if (overlapWidth * overlapHeight < MIN_OVERLAP * bestPossible) continue
 
+      let windowValid = 0
+      let comparable = 0
       let agree = 0
-      for (let row = 0; row < overlapHeight; row++) {
-        for (let column = 0; column < overlapWidth; column++) {
-          const mapBit = map.mask[(top + row) * map.width + left + column]
-          const windowBit = window.mask[(top + row - y) * window.width + left + column - x]
-          if (mapBit === windowBit) agree++
+      for (let row = top; row < bottom; row++) {
+        for (let column = left; column < right; column++) {
+          if (!blocked(window, column - x, row - y)) continue
+          windowValid++
+          if (!blocked(map, column, row)) continue
+          comparable++
+          if (map.mask[row * map.width + column] === window.mask[(row - y) * window.width + (column - x)]) agree++
         }
       }
-      const score = agree / overlapArea
+      if (windowValid === 0 || comparable < 0.15 * bestPossible) continue
+      const score = agree / windowValid
       if (best === null || score > best.score) best = { x, y, score }
     }
   }
@@ -75,90 +97,83 @@ describe('locateWindow', () => {
   })
 
   it('scores an exact crop 1 at its true position', () => {
-    const map = randomMask(24, 20, 7)
-    const window = crop(map, 5, 4, 10, 8)
+    const map = randomMask(32, 24, 7)
+    const window = crop(map, 8, 8, 16, 8)
 
-    expect(locateWindow(window, map)).toEqual({ x: 5, y: 4, score: 1 })
+    expect(locate(window, map)).toEqual({ x: 8, y: 8, score: 1 })
   })
 
   it('still wins its true position with one tile overwritten', () => {
-    const map = randomMask(24, 20, 7)
-    const window = flip(crop(map, 5, 4, 10, 8), 3, 3)
+    const map = randomMask(32, 24, 7)
+    const window = flip(crop(map, 8, 8, 16, 8), 3, 3)
 
-    expect(locateWindow(window, map)).toEqual({ x: 5, y: 4, score: 79 / 80 })
+    const match = locate(window, map)
+    expect(match?.x).toBe(8)
+    expect(match?.y).toBe(8)
+    expect(match?.score).toBeLessThan(1)
   })
 
   it('matches at a negative offset when the map is smaller than the window in both axes', () => {
-    const small = randomMask(6, 5, 3)
-    const big = new Uint8Array(12 * 10)
-    for (let row = 0; row < 5; row++) {
-      for (let column = 0; column < 6; column++) {
-        big[(3 + row) * 12 + (4 + column)] = small.mask[row * 6 + column]
+    const small = randomMask(8, 8, 3)
+    const big = new Uint8Array(24 * 16)
+    for (let row = 0; row < 8; row++) {
+      for (let column = 0; column < 8; column++) {
+        big[(8 + row) * 24 + (8 + column)] = small.mask[row * 8 + column]
       }
     }
-    const window: FrameMask = { width: 12, height: 10, mask: big }
 
-    expect(locateWindow(window, small)).toEqual({ x: -4, y: -3, score: 1 })
+    expect(locate({ width: 24, height: 16, mask: big }, small)).toEqual({ x: -8, y: -8, score: 1 })
   })
 
-  it('matches a window wider than a map that is itself taller than the window', () => {
-    // Mirrors the 160x96-window-vs-128x128-house case (#166): the map is narrower than the window
-    // but taller, so the window can never sit fully inside the map — only `MIN_OVERLAP` against the
-    // best-possible overlap makes this placement valid at all.
-    const map = randomMask(6, 8, 21)
-    const filler = randomMask(10, 6, 99)
-    const window = new Uint8Array(filler.mask)
-    for (let row = 0; row < 6; row++) {
-      for (let column = 0; column < 6; column++) {
-        window[row * 10 + (2 + column)] = map.mask[(1 + row) * 6 + column]
-      }
+  it('ignores a block with no edge in it, on either side', () => {
+    // The window is real structure on the left and flat black on the right, the map only holds the
+    // structure. The blank half is what a screen shows past the edge of a small room: it must not
+    // count as agreement, and it must not count against the match either.
+    const structure = randomMask(16, 8, 5)
+    const window = new Uint8Array(32 * 8)
+    for (let row = 0; row < 8; row++) {
+      for (let column = 0; column < 16; column++) window[row * 32 + column] = structure.mask[row * 16 + column]
+    }
+    const map = new Uint8Array(32 * 8)
+    for (let row = 0; row < 8; row++) {
+      for (let column = 0; column < 16; column++) map[row * 32 + column] = structure.mask[row * 16 + column]
     }
 
-    expect(locateWindow({ width: 10, height: 6, mask: window }, map)).toEqual({
-      x: -2,
-      y: 1,
+    expect(locate({ width: 32, height: 8, mask: window }, { width: 32, height: 8, mask: map })).toEqual({
+      x: 0,
+      y: 0,
       score: 1,
     })
   })
 
+  it('returns null against a map with no structure at all', () => {
+    // Every block flat: nothing to compare, so there is no candidate offset — not a perfect score
+    // for having agreed about nothing.
+    const map: FrameMask = { width: 32, height: 24, mask: new Uint8Array(32 * 24) }
+    expect(locate(randomMask(16, 8, 11), map)).toBeNull()
+  })
+
   it('rejects a window that only half-hangs off a map, even where that half matches perfectly', () => {
-    // A uniform map with a window that is real structure on one side and blank on the other: the
-    // blank side alone would score a perfect match, but its overlap never clears `MIN_OVERLAP`, so
-    // that position must never be the winner.
-    const map: FrameMask = { width: 12, height: 4, mask: new Uint8Array(12 * 4) }
-    const windowBits = new Uint8Array(10 * 4)
-    for (let row = 0; row < 4; row++) {
-      for (let column = 0; column < 10; column++) {
-        windowBits[row * 10 + column] = column < 6 ? 1 : 0
-      }
+    const structure = randomMask(16, 8, 13)
+    const map = new Uint8Array(32 * 8)
+    for (let row = 0; row < 8; row++) {
+      for (let column = 0; column < 16; column++) map[row * 32 + column] = structure.mask[row * 16 + column]
     }
-    const window: FrameMask = { width: 10, height: 4, mask: windowBits }
-
-    const match = locateWindow(window, map)
+    const match = locate(structure, { width: 32, height: 8, mask: map })
     expect(match).not.toBeNull()
-    expect(match?.score).toBeLessThan(1)
-    expect(match?.x).toBeGreaterThanOrEqual(-1)
-    expect(match?.x).toBeLessThanOrEqual(3)
+    expect(match?.x).toBe(0)
   })
 
-  it('returns a score that does not clear LOCATE_ACCEPT against a uniform map', () => {
-    const map: FrameMask = { width: 20, height: 16, mask: new Uint8Array(20 * 16) }
-    const window = randomMask(10, 8, 11)
-
-    const match = locateWindow(window, map)
-    expect(match).not.toBeNull()
-    expect(match?.score).toBeLessThan(LOCATE_ACCEPT)
-  })
-
-  it('finds the same peak as an exhaustive search over every valid offset', () => {
+  it('finds the same peak as an exhaustive search over every offset on the grid', () => {
     const fixtures: { window: FrameMask; map: FrameMask }[] = [
-      { map: randomMask(24, 20, 7), window: crop(randomMask(24, 20, 7), 5, 4, 10, 8) },
-      { map: randomMask(24, 20, 7), window: flip(crop(randomMask(24, 20, 7), 5, 4, 10, 8), 3, 3) },
-      { map: randomMask(40, 32, 42), window: crop(randomMask(40, 32, 42), 18, 9, 14, 10) },
+      { map: randomMask(32, 24, 7), window: crop(randomMask(32, 24, 7), 8, 8, 16, 8) },
+      { map: randomMask(32, 24, 7), window: flip(crop(randomMask(32, 24, 7), 8, 8, 16, 8), 3, 3) },
+      { map: randomMask(48, 40, 42), window: crop(randomMask(48, 40, 42), 16, 8, 24, 16) },
+      { map: randomMask(40, 32, 21), window: randomMask(24, 16, 99) },
     ]
 
     for (const { window, map } of fixtures) {
-      expect(locateWindow(window, map)).toEqual(exhaustiveLocate(window, map))
+      expect(locate(window, map)).toEqual(exhaustiveLocate(window, map))
     }
   })
 })

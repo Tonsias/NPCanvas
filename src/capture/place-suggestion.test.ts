@@ -3,9 +3,11 @@ import { asDialogueId, asMapId, asPendingCaptureId } from '../project/ids.ts'
 import type { Dialogue, GameMap, MapId, PendingCapture } from '../project/types.ts'
 import type { WindowMatch } from './frame-locate.ts'
 import {
+  contextScore,
   isConfident,
   mapsToScore,
   orderCandidateMaps,
+  placementTrail,
   PLAYER_IN_WINDOW,
   RING_DEPTH_DEFAULT,
   RING_DEPTH_STEP,
@@ -14,6 +16,7 @@ import {
   topCandidates,
   withResults,
   type MapCandidate,
+  type PlacementAnchor,
   type RingSearch,
 } from './place-suggestion.ts'
 
@@ -47,6 +50,28 @@ function capture(spokenAt: string): PendingCapture {
     media: [],
     spokenAt,
     relevance: [],
+  }
+}
+
+function gameMap(id: string, origin: { x: number; y: number }, size: number | { width: number; height: number }): GameMap {
+  const { width, height } = typeof size === 'number' ? { width: size, height: size } : size
+  return {
+    id: asMapId(id),
+    name: id,
+    file: { fileName: `${id}.png`, mimeType: 'image/png', byteSize: 0 },
+    width,
+    height,
+    origin,
+    scale: 1,
+  }
+}
+
+function anchorOn(map: GameMap, position = { x: 0, y: 0 }, weight = 1): PlacementAnchor {
+  return {
+    mapId: map.id,
+    point: { x: map.origin.x + position.x * map.scale, y: map.origin.y + position.y * map.scale },
+    position,
+    weight,
   }
 }
 
@@ -97,59 +122,91 @@ describe('suggestFromNeighbour', () => {
   })
 })
 
-function gameMap(id: string, origin: { x: number; y: number }, size: number | { width: number; height: number }): GameMap {
-  const { width, height } = typeof size === 'number' ? { width: size, height: size } : size
-  return {
-    id: asMapId(id),
-    name: id,
-    file: { fileName: `${id}.png`, mimeType: 'image/png', byteSize: 0 },
-    width,
-    height,
-    origin,
-    scale: 1,
-  }
-}
+describe('placementTrail', () => {
+  it('takes the nearest lines in time, in either direction, nearest first', () => {
+    const before = dialogue('before', '2026-01-01T00:00:50.000Z')
+    const after = dialogue('after', '2026-01-01T00:01:05.000Z')
+    const far = dialogue('far', '2026-01-01T00:20:00.000Z', MAP_B)
+    const trail = placementTrail(capture('2026-01-01T00:01:00.000Z'), [far, before, after], MAPS)
+    expect(trail).toHaveLength(3)
+    expect(trail[0].position).toEqual(after.position)
+    expect(trail[2].mapId).toBe(MAP_B)
+    expect(trail[0].weight).toBeGreaterThan(trail[1].weight)
+    expect(trail[1].weight).toBeGreaterThan(trail[2].weight)
+  })
+
+  it('keeps at most three anchors, however many lines are placed', () => {
+    const lines = Array.from({ length: 9 }, (_, index) =>
+      dialogue(`line-${index}`, `2026-01-01T00:0${index}:00.000Z`),
+    )
+    expect(placementTrail(capture('2026-01-01T00:00:30.000Z'), lines, MAPS)).toHaveLength(3)
+  })
+
+  it('carries the anchor point into canvas space, scale included', () => {
+    const scaled: GameMap = { ...gameMap('c', { x: 1000, y: 2000 }, 100), scale: 2 }
+    const placed = dialogue('placed', '2026-01-01T00:00:00.000Z', scaled.id, { x: 10, y: 20 })
+    const trail = placementTrail(capture('2026-01-01T00:00:01.000Z'), [placed], [scaled])
+    expect(trail[0].point).toEqual({ x: 1020, y: 2040 })
+    expect(trail[0].position).toEqual({ x: 10, y: 20 })
+  })
+
+  it('skips a line whose map is gone, and is empty for an unparseable capture', () => {
+    const dangling = dialogue('dangling', '2026-01-01T00:00:00.000Z', asMapId('gone'))
+    expect(placementTrail(capture('2026-01-01T00:00:01.000Z'), [dangling], MAPS)).toEqual([])
+    expect(placementTrail(capture('not a date'), [dialogue('ok', '2026-01-01T00:00:00.000Z')], MAPS)).toEqual([])
+  })
+})
+
+describe('contextScore', () => {
+  const here = gameMap('here', { x: 0, y: 0 }, 100)
+  const next = gameMap('next', { x: 150, y: 0 }, 100)
+  const far = gameMap('far', { x: 100000, y: 0 }, 100)
+
+  it('is zero with no trail, and never negative', () => {
+    expect(contextScore(here, [])).toBe(0)
+    expect(contextScore(far, [anchorOn(here)])).toBeGreaterThanOrEqual(0)
+  })
+
+  it('ranks the map the trail stood on over a neighbour, and a neighbour over a distant map', () => {
+    const trail = [anchorOn(here)]
+    expect(contextScore(here, trail)).toBeGreaterThan(contextScore(next, trail))
+    expect(contextScore(next, trail)).toBeGreaterThan(contextScore(far, trail))
+  })
+
+  it('weighs a heavier anchor above a lighter one', () => {
+    const strong = contextScore(next, [anchorOn(here, { x: 0, y: 0 }, 1)])
+    const weak = contextScore(next, [anchorOn(far, { x: 0, y: 0 }, 1), anchorOn(here, { x: 0, y: 0 }, 0.1)])
+    expect(strong).toBeGreaterThan(weak)
+  })
+})
 
 describe('orderCandidateMaps', () => {
-  it('returns the document order when from is null', () => {
+  it('returns the document order when the trail is empty', () => {
     const maps = [gameMap('a', { x: 0, y: 0 }, 100), gameMap('b', { x: 500, y: 0 }, 100)]
-    expect(orderCandidateMaps(null, maps)).toEqual([maps[0].id, maps[1].id])
+    expect(orderCandidateMaps([], maps)).toEqual([maps[0].id, maps[1].id])
   })
 
-  it('puts touching maps at gap zero, from first', () => {
+  it('puts the map the trail stood on first, then the rest by distance from it', () => {
     const from = gameMap('a', { x: 0, y: 0 }, 100)
     const touching = gameMap('b', { x: 100, y: 0 }, 100)
-    const far = gameMap('c', { x: 1000, y: 0 }, 100)
-    expect(orderCandidateMaps(from, [far, from, touching])).toEqual([from.id, touching.id, far.id])
+    const far = gameMap('c', { x: 9000, y: 0 }, 100)
+    expect(orderCandidateMaps([anchorOn(from)], [far, from, touching])).toEqual([from.id, touching.id, far.id])
   })
 
-  it('gives a map inside another map\'s bounds gap zero', () => {
-    const from = gameMap('a', { x: 0, y: 0 }, 100)
-    const inside = gameMap('b', { x: 10, y: 10 }, 10)
-    const far = gameMap('c', { x: 1000, y: 0 }, 100)
-    expect(orderCandidateMaps(from, [far, from, inside])).toEqual([from.id, inside.id, far.id])
-  })
-
-  it('ranks by rectangle gap, not centre distance, for a large map', () => {
-    const from = gameMap('a', { x: 0, y: 0 }, 100)
-    // big's centre sits far away, but its edge is only 50 units past `from` — closer by gap than
-    // small, whose centre is nearer but whose edge is 200 units past `from`.
-    const big = gameMap('big', { x: 150, y: 0 }, 1000)
-    const small = gameMap('small', { x: 300, y: 0 }, 10)
-    expect(orderCandidateMaps(from, [small, from, big])).toEqual([from.id, big.id, small.id])
-  })
-
-  it('keeps a 128x128 map among large ones as an ordinary candidate', () => {
-    const from = gameMap('a', { x: 0, y: 0 }, 100)
-    const house = gameMap('house', { x: 300, y: 0 }, 128)
-    const city = gameMap('city', { x: 900, y: 0 }, 640)
-    expect(orderCandidateMaps(from, [from, house, city])).toEqual([from.id, house.id, city.id])
+  it('measures from the anchor point rather than from the map it sits on', () => {
+    const from = gameMap('a', { x: 0, y: 0 }, 1000)
+    const east = gameMap('east', { x: 1100, y: 0 }, 100)
+    const west = gameMap('west', { x: -200, y: 0 }, 100)
+    // The player last spoke at the east edge of `from`, so `east` is the nearer door.
+    const trail = [anchorOn(from, { x: 990, y: 500 })]
+    expect(orderCandidateMaps(trail, [west, east])[0]).toBe(east.id)
   })
 
   it('is total and stable: the same inputs give the same order', () => {
     const from = gameMap('a', { x: 0, y: 0 }, 100)
     const maps = [gameMap('b', { x: 300, y: 0 }, 50), from, gameMap('c', { x: 300, y: 0 }, 50)]
-    expect(orderCandidateMaps(from, maps)).toEqual(orderCandidateMaps(from, [...maps]))
+    const trail = [anchorOn(from)]
+    expect(orderCandidateMaps(trail, maps)).toEqual(orderCandidateMaps(trail, [...maps]))
   })
 })
 
@@ -210,69 +267,102 @@ describe('mapsToScore / withResults', () => {
 })
 
 describe('topCandidates', () => {
-  it('orders by score descending', () => {
-    const results = new Map<MapId, WindowMatch | null>([
-      [asMapId('low'), { x: 0, y: 0, score: 0.2 }],
-      [asMapId('high'), { x: 0, y: 0, score: 0.9 }],
-      [asMapId('mid'), { x: 0, y: 0, score: 0.5 }],
-    ])
-    const search: RingSearch = { order: [...results.keys()], depth: results.size, results }
-    const top = topCandidates(search, 3)
-    expect(top.map((candidate) => candidate.mapId)).toEqual([asMapId('high'), asMapId('mid'), asMapId('low')])
+  const here = gameMap('here', { x: 0, y: 0 }, 100)
+  const next = gameMap('next', { x: 150, y: 0 }, 100)
+  const far = gameMap('far', { x: 50000, y: 0 }, 100)
+  const maps = [here, next, far]
+  const searchOf = (results: ReadonlyMap<MapId, WindowMatch | null>): RingSearch => ({
+    order: [...results.keys()],
+    depth: results.size,
+    results,
   })
 
-  it('breaks a tie by ring order', () => {
-    const results = new Map<MapId, WindowMatch | null>([
-      [asMapId('near'), { x: 0, y: 0, score: 0.7 }],
-      [asMapId('far'), { x: 0, y: 0, score: 0.7 }],
+  it('orders by picture score when no trail says otherwise', () => {
+    const search = searchOf(new Map<MapId, WindowMatch | null>([
+      [here.id, { x: 0, y: 0, score: 0.2 }],
+      [next.id, { x: 0, y: 0, score: 0.9 }],
+      [far.id, { x: 0, y: 0, score: 0.5 }],
+    ]))
+    expect(topCandidates(search, [], maps, 3).map((candidate) => candidate.mapId)).toEqual([next.id, far.id, here.id])
+  })
+
+  it('lets the trail decide between pictures that say the same thing', () => {
+    // Every interior in this game is drawn from the same tiles, so all three score alike. Where the
+    // player was is then the only thing left that separates them.
+    const search = searchOf(new Map<MapId, WindowMatch | null>([
+      [far.id, { x: 0, y: 0, score: 0.71 }],
+      [next.id, { x: 0, y: 0, score: 0.7 }],
+      [here.id, { x: 0, y: 0, score: 0.7 }],
+    ]))
+    expect(topCandidates(search, [anchorOn(here)], maps, 3).map((candidate) => candidate.mapId)).toEqual([
+      here.id,
+      next.id,
+      far.id,
     ])
-    const search: RingSearch = { order: [...results.keys()], depth: results.size, results }
-    expect(topCandidates(search, 2).map((candidate) => candidate.mapId)).toEqual([
-      asMapId('near'),
-      asMapId('far'),
-    ])
+  })
+
+  it('lets a picture that separates itself win against the trail', () => {
+    const search = searchOf(new Map<MapId, WindowMatch | null>([
+      [here.id, { x: 0, y: 0, score: 0.55 }],
+      [far.id, { x: 0, y: 0, score: 0.98 }],
+    ]))
+    expect(topCandidates(search, [anchorOn(here)], maps, 1)[0].mapId).toBe(far.id)
+  })
+
+  it('adds PLAYER_IN_WINDOW to a trusted offset, including a negative one', () => {
+    const search = searchOf(new Map<MapId, WindowMatch | null>([[here.id, { x: -32, y: -16, score: 0.95 }]]))
+    const candidate = topCandidates(search, [], maps, 1)[0]
+    expect(candidate.position).toEqual({ x: -32 + PLAYER_IN_WINDOW.x, y: -16 + PLAYER_IN_WINDOW.y })
+    expect(candidate.picture).toBe(0.95)
+  })
+
+  it('falls back to where the player last stood when the picture is weak', () => {
+    const search = searchOf(new Map<MapId, WindowMatch | null>([[here.id, { x: 400, y: 400, score: 0.4 }]]))
+    expect(topCandidates(search, [anchorOn(here, { x: 12, y: 34 })], maps, 1)[0].position).toEqual({ x: 12, y: 34 })
   })
 
   it('skips maps with no match and limits to n', () => {
-    const results = new Map<MapId, WindowMatch | null>([
-      [asMapId('none'), null],
-      [asMapId('a'), { x: 0, y: 0, score: 0.6 }],
-      [asMapId('b'), { x: 0, y: 0, score: 0.8 }],
-    ])
-    const search: RingSearch = { order: [...results.keys()], depth: results.size, results }
-    expect(topCandidates(search, 1)).toEqual([
-      { mapId: asMapId('b'), position: { x: PLAYER_IN_WINDOW.x, y: PLAYER_IN_WINDOW.y }, score: 0.8 },
-    ])
-  })
-
-  it('adds PLAYER_IN_WINDOW to the located origin, including a negative one', () => {
-    const results = new Map<MapId, WindowMatch | null>([[asMapId('a'), { x: -30, y: -12, score: 0.9 }]])
-    const search: RingSearch = { order: [...results.keys()], depth: 1, results }
-    expect(topCandidates(search, 1)[0].position).toEqual({
-      x: -30 + PLAYER_IN_WINDOW.x,
-      y: -12 + PLAYER_IN_WINDOW.y,
-    })
+    const search = searchOf(new Map<MapId, WindowMatch | null>([
+      [here.id, null],
+      [next.id, { x: 0, y: 0, score: 0.6 }],
+      [far.id, { x: 0, y: 0, score: 0.8 }],
+    ]))
+    const top = topCandidates(search, [], maps, 1)
+    expect(top).toHaveLength(1)
+    expect(top[0].mapId).toBe(far.id)
   })
 })
 
 describe('isConfident', () => {
-  const candidate = (score: number): MapCandidate => ({ mapId: asMapId('a'), position: { x: 0, y: 0 }, score })
+  const candidate = (picture: number): MapCandidate => ({
+    mapId: asMapId('a'),
+    position: { x: 0, y: 0 },
+    score: picture,
+    picture,
+  })
 
   it('is false below LOCATE_ACCEPT regardless of margin', () => {
-    expect(isConfident(candidate(0.87), null)).toBe(false)
-    expect(isConfident(candidate(0.87), candidate(0.5))).toBe(false)
+    expect(isConfident(candidate(0.9), null)).toBe(false)
+    expect(isConfident(candidate(0.9), candidate(0.5))).toBe(false)
   })
 
   it('is true at LOCATE_ACCEPT with no runner-up', () => {
-    expect(isConfident(candidate(0.88), null)).toBe(true)
+    expect(isConfident(candidate(0.92), null)).toBe(true)
   })
 
   it('is false when the runner-up is within LOCATE_MARGIN', () => {
-    expect(isConfident(candidate(0.9), candidate(0.87))).toBe(false)
+    expect(isConfident(candidate(0.93), candidate(0.91))).toBe(false)
   })
 
   it('is true when the runner-up is beyond LOCATE_MARGIN', () => {
-    expect(isConfident(candidate(0.92), candidate(0.87))).toBe(true)
+    expect(isConfident(candidate(0.96), candidate(0.9))).toBe(true)
+  })
+
+  it('judges the picture alone, never the fused score', () => {
+    // A candidate the trail pushed to the top carries a high `score` and a weak `picture`: context
+    // can order the list, but it must never claim the frame itself was recognised.
+    const lifted: MapCandidate = { mapId: asMapId('a'), position: { x: 0, y: 0 }, score: 1.4, picture: 0.6 }
+    expect(isConfident(lifted, null)).toBe(false)
   })
 })
 

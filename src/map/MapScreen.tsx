@@ -9,9 +9,10 @@ import { CanvasLegend } from '../dialogue/CanvasLegend.tsx'
 import { DialoguePanel } from '../dialogue/DialoguePanel.tsx'
 import type { PlaceSuggestion, RingSearch } from '../capture/place-suggestion.ts'
 import {
+  assumeAnchor,
   buildRingSearch,
+  placementTrail,
   RING_DEPTH_STEP,
-  suggestFromNeighbour,
   suggestPlacement,
   widenRingSearch,
 } from '../capture/place-suggestion.ts'
@@ -194,10 +195,8 @@ export function MapScreen({
       return
     }
     setSearch(null) // clears a previous capture's stale candidates while this one decodes
-    const neighbour = suggestFromNeighbour(capture, project.dialogues, project.maps)
-    const fromMap =
-      neighbour === null ? null : (project.maps.find((map) => map.id === neighbour.mapId) ?? null)
-    void buildRingSearch(capture, project.maps, project.captureProfiles, fromMap).then((built) => {
+    const trail = placementTrail(capture, project.dialogues, project.maps)
+    void buildRingSearch(capture, project.maps, project.captureProfiles, trail).then((built) => {
       if (searchEpochRef.current !== epoch) return
       setSearch(built)
       setSelectedSuggestionIndex(
@@ -265,8 +264,14 @@ export function MapScreen({
     const dialogues = project.dialogues
     const profiles = project.captureProfiles
     let cancelled = false
-    const fromMap = maps.find((map) => map.id === assumedFromMapId) ?? null
-    void buildRingSearch(capture, maps, profiles, fromMap).then((built) => {
+    const assumedMap = maps.find((map) => map.id === assumedFromMapId) ?? null
+    const trail = placementTrail(capture, dialogues, maps)
+    void buildRingSearch(
+      capture,
+      maps,
+      profiles,
+      assumedMap === null ? trail : assumeAnchor(assumedMap, selectedSuggestion.position, trail),
+    ).then((built) => {
       if (cancelled) return
       setPrecomputed({
         captureId: capture.id,

@@ -1,6 +1,7 @@
 import { acquireMediaUrl, releaseMediaUrl } from '../media/media-url-cache.ts'
 import type { GameMap, MapId, MediaFile, PixelRect } from '../project/types.ts'
-import type { FrameMask } from './frame-locate.ts'
+import type { FrameMask, LocateMask } from './frame-locate.ts'
+import { prepareMask } from './frame-locate.ts'
 import { edgeMask } from './frame-window.ts'
 
 // `createImageBitmap` on the blob -> a 2D context created with `{ willReadFrequently: true }` ->
@@ -39,15 +40,15 @@ export async function decodeMask(file: MediaFile, rect?: PixelRect): Promise<Fra
 // be served a stale mask forever (#168). A map that only moves keeps its file name, so a drag
 // never triggers a redecode. A failed decode is never cached, so a file that is momentarily
 // unreadable (folder reconnect still pending) gets retried on the next press rather than stuck.
-const cache = new Map<MapId, { fileName: string; mask: FrameMask }>()
+const cache = new Map<MapId, { fileName: string; mask: LocateMask }>()
 
 // A capture's own search and #169's one-ahead precompute can both ask for the same map's mask
 // before either decode finishes (their rings usually overlap near `from`) — keyed by `MapId` and
 // `fileName` like `cache` itself, so a re-import while a decode is in flight starts its own entry
 // rather than handing the stale decode's result to the newer request.
-const inFlight = new Map<string, Promise<FrameMask | null>>()
+const inFlight = new Map<string, Promise<LocateMask | null>>()
 
-export async function mapMask(map: GameMap): Promise<FrameMask | null> {
+export async function mapMask(map: GameMap): Promise<LocateMask | null> {
   const cached = cache.get(map.id)
   if (cached !== undefined && cached.fileName === map.file.fileName) return cached.mask
 
@@ -55,9 +56,11 @@ export async function mapMask(map: GameMap): Promise<FrameMask | null> {
   const pending = inFlight.get(key)
   if (pending !== undefined) return pending
 
-  const decode = decodeMask(map.file).then((mask) => {
+  const decode = decodeMask(map.file).then((decoded) => {
     inFlight.delete(key)
-    if (mask !== null) cache.set(map.id, { fileName: map.file.fileName, mask })
+    if (decoded === null) return null
+    const mask = prepareMask(decoded)
+    cache.set(map.id, { fileName: map.file.fileName, mask })
     return mask
   })
   inFlight.set(key, decode)
