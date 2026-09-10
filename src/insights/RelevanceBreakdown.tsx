@@ -3,6 +3,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Disclosure } from '../app/Disclosure.tsx'
 import type { Dialogue, DialogueId, RelevanceTag, Zone, ZoneId } from '../project/types.ts'
 import { useChartWidth } from './chart-width.ts'
+import { FoldRows, ROW_LIMIT } from './FoldRows.tsx'
 import type { DialogueFilter, ZoneScope } from './filters.ts'
 import { NO_ZONE, npcKey, npcLabel } from './filters.ts'
 import { SegmentDefs, SegmentFill, SegmentLegend, UNKNOWN_FILL } from './SegmentLegend.tsx'
@@ -20,8 +21,6 @@ type BreakdownRow = {
   counts: Map<SegmentKey, number>
   target: RowTarget
 }
-
-const ROW_LIMIT = 15
 
 // Both charts read the filtered dialogues, so clicking a segment drills down rather than
 // showing a chart of something the rest of the screen isn't looking at.
@@ -164,14 +163,12 @@ function BreakdownChart({
         </svg>
       )}
       {overflows && (
-        <button
-          type="button"
-          className="insights__expand-rows disclosure-summary"
-          aria-expanded={expanded}
-          onClick={() => setExpanded((open) => !open)}
-        >
-          {expanded ? `Fold back to the top ${ROW_LIMIT}` : `Show all ${rows.length} ${noun}`}
-        </button>
+        <FoldRows
+          expanded={expanded}
+          total={rows.length}
+          noun={noun}
+          onToggle={() => setExpanded((open) => !open)}
+        />
       )}
     </figure>
   )

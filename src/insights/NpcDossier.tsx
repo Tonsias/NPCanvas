@@ -16,6 +16,7 @@ import type {
   Zone,
   ZoneId,
 } from '../project/types.ts'
+import { FoldRows, ROW_LIMIT } from './FoldRows.tsx'
 import { NpcLines } from './NpcLines.tsx'
 import { SegmentDefs, SegmentFill, SegmentLegend, UNKNOWN_FILL } from './SegmentLegend.tsx'
 import type { DossierFilter } from './dossier-filter.ts'
@@ -69,6 +70,7 @@ export function NpcDossier({
   filter: DossierFilter
   onChange: (next: { key: string | null; filter: DossierFilter }) => void
 }): ReactElement {
+  const [expanded, setExpanded] = useState(false)
   const questsByDialogue = useMemo(() => indexQuestsByDialogue(quests), [quests])
   const profiles = useMemo(
     () => buildProfiles(dialogues, questsByDialogue, zonesById, zoneIndex, relevanceTags),
@@ -81,6 +83,12 @@ export function NpcDossier({
   // selected NPC without anyone clicking, and the chips must never disagree with what is applied.
   const offered = selected === null ? EMPTY_DOSSIER_FILTER : offeredBy(selected, relevanceTags)
   const effective = pruneDossierFilter(filter, offered)
+  // Folded like the breakdown charts, except that the open NPC is always drawn: the tail here is
+  // a list of selections, not a bar it could be folded into, and the list has to say which one
+  // the dossier beside it belongs to.
+  const overflows = profiles.length > ROW_LIMIT + 1
+  const listed =
+    expanded || !overflows ? profiles : withSelected(profiles.slice(0, ROW_LIMIT), selected)
 
   return (
     <section className="insights__panel panel" aria-label="NPC dossier">
@@ -105,31 +113,41 @@ export function NpcDossier({
             <SegmentDefs idPrefix="npc" tags={relevanceTags} />
           </svg>
 
-          <ul className="npc-dossier__list">
-            {profiles.map((profile) => (
-              <li key={profile.key}>
-                <button
-                  type="button"
-                  className="npc-dossier__entry"
-                  aria-pressed={profile === selected}
-                  onClick={() =>
-                    onChange({
-                      key: profile.key,
-                      filter: pruneDossierFilter(filter, offeredBy(profile, relevanceTags)),
-                    })
-                  }
-                >
-                  <span className="npc-dossier__name">{profile.label}</span>
-                  <span className="npc-dossier__count hint-text">{profile.dialogues.length}</span>
-                  <SegmentBar
-                    counts={profile.tally.counts}
-                    tags={relevanceTags}
-                    className="npc-dossier__spark"
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div className="npc-dossier__index">
+            <ul className="npc-dossier__list">
+              {listed.map((profile) => (
+                <li key={profile.key}>
+                  <button
+                    type="button"
+                    className="npc-dossier__entry"
+                    aria-pressed={profile === selected}
+                    onClick={() =>
+                      onChange({
+                        key: profile.key,
+                        filter: pruneDossierFilter(filter, offeredBy(profile, relevanceTags)),
+                      })
+                    }
+                  >
+                    <span className="npc-dossier__name">{profile.label}</span>
+                    <span className="npc-dossier__count hint-text">{profile.dialogues.length}</span>
+                    <SegmentBar
+                      counts={profile.tally.counts}
+                      tags={relevanceTags}
+                      className="npc-dossier__spark"
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {overflows && (
+              <FoldRows
+                expanded={expanded}
+                total={profiles.length}
+                noun="NPCs"
+                onToggle={() => setExpanded((open) => !open)}
+              />
+            )}
+          </div>
 
           {selected !== null && (
             <Dossier
@@ -469,6 +487,13 @@ function SegmentBar({
       )}
     </svg>
   )
+}
+
+// The open NPC joins the folded head rather than vanishing with the tail — it may sit anywhere
+// in the order, and the list is how a reader sees which dossier is showing.
+function withSelected(head: NpcProfile[], selected: NpcProfile | null): NpcProfile[] {
+  if (selected === null || head.includes(selected)) return head
+  return [...head, selected]
 }
 
 // What this NPC can answer — the chips drawn below, and the set a filter carried over from the
